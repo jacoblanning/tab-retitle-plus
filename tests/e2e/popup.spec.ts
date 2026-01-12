@@ -93,7 +93,10 @@ test.describe('Popup Functionality', () => {
   test('should display existing rules', async ({ extensionContext, extensionId }) => {
     // Set up storage with existing rules
     const storageHelper = new StorageHelper(extensionContext);
-    await storageHelper.setUrlTitle('https://example.com', '[TEST] Example');
+    // Use the popup URL because in the test environment, the popup is the active tab
+    // and it checks rules against its own URL
+    const popupUrl = `chrome-extension://${extensionId}/popup.html`;
+    await storageHelper.setUrlTitle(popupUrl, '[TEST] Example');
 
     const popupPage = new PopupPage(await extensionContext.newPage());
     await popupPage.goto(extensionId);

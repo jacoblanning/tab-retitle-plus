@@ -1,4 +1,4 @@
-import { type BrowserContext } from '@playwright/test';
+import { type BrowserContext, type Worker } from '@playwright/test';
 
 /**
  * Helper for manipulating Chrome extension storage in tests
@@ -7,10 +7,29 @@ export class StorageHelper {
   constructor(private context: BrowserContext) {}
 
   /**
+   * Get the service worker or a background page to execute scripts in
+   */
+  private async getWorker(): Promise<Worker> {
+    // Try to get service worker
+    const workers = this.context.serviceWorkers();
+    if (workers.length > 0) {
+      return workers[0];
+    }
+
+    // Wait for a service worker if none exist
+    try {
+      return await this.context.waitForEvent('serviceworker', { timeout: 5000 });
+    } catch (e) {
+      throw new Error('No service worker found to execute storage commands');
+    }
+  }
+
+  /**
    * Clear all extension storage
    */
   async clearAll(): Promise<void> {
-    await this.context.evaluate(() => {
+    const worker = await this.getWorker();
+    await worker.evaluate(() => {
       return new Promise<void>((resolve) => {
         chrome.storage.sync.clear(() => {
           chrome.storage.local.clear(() => {
@@ -25,7 +44,8 @@ export class StorageHelper {
    * Set storage data
    */
   async setStorage(data: Record<string, any>): Promise<void> {
-    await this.context.evaluate((storageData) => {
+    const worker = await this.getWorker();
+    await worker.evaluate((storageData) => {
       return new Promise<void>((resolve) => {
         chrome.storage.sync.set(storageData, () => {
           resolve();
@@ -38,7 +58,8 @@ export class StorageHelper {
    * Get storage data
    */
   async getStorage(keys?: string | string[]): Promise<Record<string, any>> {
-    return await this.context.evaluate((storageKeys) => {
+    const worker = await this.getWorker();
+    return await worker.evaluate((storageKeys) => {
       return new Promise<Record<string, any>>((resolve) => {
         chrome.storage.sync.get(storageKeys || null, (items) => {
           resolve(items);

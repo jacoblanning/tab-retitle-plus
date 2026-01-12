@@ -24,16 +24,13 @@ export const test = base.extend<{
   extensionContext: async ({}, use) => {
     const pathToExtension = path.join(__dirname, '../../dist');
     const context = await chromium.launchPersistentContext('', {
-      headless: false,
+      headless: false, // We must tell Playwright we are headed to allow extensions
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
+        '--headless=new', // But we tell Chrome to run in new headless mode
       ],
     });
-
-    // Wait for extension to load and get its ID
-    // Extension ID is typically available after a short delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
     await use(context);
     await context.close();
@@ -43,84 +40,58 @@ export const test = base.extend<{
     // Get extension ID from service worker (Manifest V3)
     let extensionId = '';
 
-    // Method 1: Wait for service worker to be ready and get ID from it
-    try {
-      // Wait for service worker to be registered
-      const serviceWorker = await extensionContext.waitForEvent('serviceworker', { timeout: 10000 });
-      const url = serviceWorker.url();
-      const match = url.match(/chrome-extension:\/\/([a-z]{32})\//);
-      if (match) {
-        extensionId = match[1];
-      }
-    } catch (e) {
-      // Service worker not detected via event, try other methods
-      console.log('Service worker event not detected, trying alternative methods...');
-    }
+    // Helper to log what we see
+    const logDebugInfo = () => {
+      const workers = extensionContext.serviceWorkers();
+      console.log(`[DEBUG] Found ${workers.length} service workers.`);
+      workers.forEach((w, i) => console.log(`[DEBUG] Worker ${i}: ${w.url()}`));
 
-    // Method 2: Check service workers directly
-    if (!extensionId) {
-      // Give service worker time to start
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const serviceWorkers = extensionContext.serviceWorkers();
-      if (serviceWorkers.length > 0) {
-        const url = serviceWorkers[0].url();
-        const match = url.match(/chrome-extension:\/\/([a-z]{32})\//);
-        if (match) {
-          extensionId = match[1];
-        }
-      }
-    }
-
-    // Method 3: Try background pages (for backwards compatibility)
-    if (!extensionId) {
       const backgroundPages = extensionContext.backgroundPages();
-      if (backgroundPages.length > 0) {
-        const url = backgroundPages[0].url();
+      console.log(`[DEBUG] Found ${backgroundPages.length} background pages.`);
+      backgroundPages.forEach((p, i) => console.log(`[DEBUG] Background Page ${i}: ${p.url()}`));
+    };
+
+    // Strategy 1: Check existing service workers (in case it already started)
+    const checkServiceWorkers = () => {
+      const serviceWorkers = extensionContext.serviceWorkers();
+      for (const worker of serviceWorkers) {
+        const url = worker.url();
         const match = url.match(/chrome-extension:\/\/([a-z]{32})\//);
         if (match) {
-          extensionId = match[1];
+          return match[1];
         }
       }
-    }
+      return null;
+    };
 
-    // Method 4: Check existing pages for extension URLs
-    if (!extensionId) {
-      const pages = extensionContext.pages();
-      for (const page of pages) {
-        const url = page.url();
-        const match = url.match(/chrome-extension:\/\/([a-z]{32})\//);
-        if (match) {
-          extensionId = match[1];
-          break;
-        }
-      }
-    }
+    extensionId = checkServiceWorkers() || '';
 
-    // Method 5: Create a page and navigate to the extension to trigger ID detection
+    // Strategy 2: Wait for service worker event
     if (!extensionId) {
       try {
-        const page = await extensionContext.newPage();
-        await page.goto('chrome://extensions/');
-        await page.waitForTimeout(500);
-
-        // Try service workers again after navigation
-        const serviceWorkers = extensionContext.serviceWorkers();
-        if (serviceWorkers.length > 0) {
-          const url = serviceWorkers[0].url();
-          const match = url.match(/chrome-extension:\/\/([a-z]{32})\//);
-          if (match) {
-            extensionId = match[1];
-          }
+        const worker = await extensionContext.waitForEvent('serviceworker', { timeout: 5000 });
+        const url = worker.url();
+        const match = url.match(/chrome-extension:\/\/([a-z]{32})\//);
+        if (match) {
+          extensionId = match[1];
         }
-        await page.close();
       } catch (e) {
-        // Ignore errors
-        console.error('Failed to detect extension ID via chrome://extensions', e);
+        // Ignore timeout
       }
     }
 
-    // If still not found, throw helpful error
+    // Strategy 3: Poll for service worker
     if (!extensionId) {
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        extensionId = checkServiceWorkers() || '';
+        if (extensionId) break;
+      }
+    }
+
+    // Final debug log if failed
+    if (!extensionId) {
+      logDebugInfo();
       throw new Error(
         'Could not determine extension ID. Troubleshooting steps:\n' +
         '1. Ensure extension is built: npm run build\n' +
@@ -130,7 +101,6 @@ export const test = base.extend<{
       );
     }
 
-    console.log(`Extension ID detected: ${extensionId}`);
     await use(extensionId);
   },
 });
