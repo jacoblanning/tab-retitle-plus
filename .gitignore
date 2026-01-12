@@ -31,3 +31,10 @@ test-storage.html
 # Temporary files
 *.log
 *.tmp
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

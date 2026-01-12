@@ -1,4 +1,5 @@
 import { defineConfig, build as viteBuild } from 'vite';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 // Build configuration for extension scripts (service worker & content script)
@@ -47,7 +48,13 @@ export default defineConfig({
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]',
+        assetFileNames: (assetInfo) => {
+          // Keep HTML files at root level, preserve other assets
+          if (assetInfo.name?.endsWith('.html')) {
+            return '[name][extname]';
+          }
+          return '[name].[ext]';
+        },
       },
     },
     outDir: 'dist',
@@ -55,6 +62,58 @@ export default defineConfig({
     minify: false,
   },
   plugins: [
+    react(),
+    {
+      name: 'move-html-files',
+      closeBundle: async () => {
+        const fs = await import('fs');
+        const path = await import('path');
+        const distDir = resolve(__dirname, 'dist');
+
+        // Move popup.html to root and fix paths
+        const popupSrc = path.join(distDir, 'src/popup/popup.html');
+        const popupDest = path.join(distDir, 'popup.html');
+        if (fs.existsSync(popupSrc)) {
+          let popupContent = fs.readFileSync(popupSrc, 'utf-8');
+          // Replace absolute paths with relative paths
+          popupContent = popupContent.replace(/src="\/([^"]+)"/g, 'src="./$1"');
+          popupContent = popupContent.replace(/href="\/([^"]+)"/g, 'href="./$1"');
+          fs.writeFileSync(popupDest, popupContent);
+          fs.unlinkSync(popupSrc);
+        }
+
+        // Move options.html to root and fix paths
+        const optionsSrc = path.join(distDir, 'src/options/options.html');
+        const optionsDest = path.join(distDir, 'options.html');
+        if (fs.existsSync(optionsSrc)) {
+          let optionsContent = fs.readFileSync(optionsSrc, 'utf-8');
+          // Replace absolute paths with relative paths
+          optionsContent = optionsContent.replace(/src="\/([^"]+)"/g, 'src="./$1"');
+          optionsContent = optionsContent.replace(/href="\/([^"]+)"/g, 'href="./$1"');
+          fs.writeFileSync(optionsDest, optionsContent);
+          fs.unlinkSync(optionsSrc);
+        }
+
+        // Clean up empty directories
+        try {
+          const popupDir = path.join(distDir, 'src/popup');
+          const optionsDir = path.join(distDir, 'src/options');
+          const srcDir = path.join(distDir, 'src');
+          
+          if (fs.existsSync(popupDir) && fs.readdirSync(popupDir).length === 0) {
+            fs.rmdirSync(popupDir);
+          }
+          if (fs.existsSync(optionsDir) && fs.readdirSync(optionsDir).length === 0) {
+            fs.rmdirSync(optionsDir);
+          }
+          if (fs.existsSync(srcDir) && fs.readdirSync(srcDir).length === 0) {
+            fs.rmdirSync(srcDir);
+          }
+        } catch (e) {
+          // Ignore errors cleaning up directories
+        }
+      },
+    },
     {
       name: 'build-extension-scripts',
       closeBundle: async () => {

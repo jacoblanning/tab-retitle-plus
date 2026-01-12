@@ -2,6 +2,19 @@
 
 A modern Chrome extension clone of [ReTitle](https://github.com/Lazyuki/ReTitle) built with TypeScript, Vite, and Tailwind CSS. Rename browser tab titles with powerful persistence options.
 
+## 📚 Learning Resources
+
+**New to this project?** Check out the [Learning Guide](./docs/learning/00-START-HERE.md) - comprehensive documentation designed for product owners learning the technology stack.
+
+- **[Start Here](./docs/learning/00-START-HERE.md)** - Introduction and roadmap
+- **[Quick Reference](./docs/learning/QUICK-REFERENCE.md)** - Cheat sheet for common tasks
+- **[Full Learning Docs](./docs/learning/)** - Complete guide from basics to advanced topics
+
+## 📋 Task Tracking
+
+- **[TODO.md](./TODO.md)** - Current tasks and priorities
+- **[NEXT_STEPS.md](./NEXT_STEPS.md)** - Detailed next steps and recommendations
+
 ## Features
 
 - **Multiple Storage Options:**
