@@ -2,7 +2,7 @@ import { type Page, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 
 /**
- * Page Object Model for the ReTitle popup
+ * Page Object Model for the Tab ReTitle+ popup
  * 
  * Encapsulates all interactions with the popup UI
  */

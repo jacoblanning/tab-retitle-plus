@@ -38,3 +38,27 @@ test-storage.html
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Chrome Extension
+*.crx
+*.pem
+*.zip
+
+# Cache
+.eslintcache
+.stylelintcache
+.cache/
+.vite/
+
+# Editor
+*.sublime-project
+*.sublime-workspace
+
+# Internal/Personal docs
+.cursorrules
+.github/INTERNAL/

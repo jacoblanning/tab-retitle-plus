@@ -18,7 +18,7 @@ export function ExtensionPopup() {
     <div className="w-[320px] rounded-lg border border-border bg-card shadow-xl">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h1 className="text-lg font-semibold text-foreground">ReTitle</h1>
+        <h1 className="text-lg font-semibold text-foreground">Tab ReTitle+</h1>
         <button className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           <Settings className="h-4 w-4" />
         </button>

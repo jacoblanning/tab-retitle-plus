@@ -1,19 +1,14 @@
-# ReTitle - Modern Chrome Extension
+# Tab ReTitle+
 
-A modern Chrome extension clone of [ReTitle](https://github.com/Lazyuki/ReTitle) built with TypeScript, Vite, and Tailwind CSS. Rename browser tab titles with powerful persistence options.
+A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/en-US/firefox/addon/tab-retitle/) for Firefox by Lazyuki. Built with TypeScript, Vite, and Tailwind CSS. Rename browser tab titles with powerful persistence options.
 
 ## 📚 Learning Resources
 
-**New to this project?** Check out the [Learning Guide](./docs/learning/00-START-HERE.md) - comprehensive documentation designed for product owners learning the technology stack.
+**New to Chrome extension development?** Check out the [Learning Guide](./docs/learning/00-START-HERE.md) - comprehensive documentation covering Chrome extensions, TypeScript, React, and the modern web development stack.
 
 - **[Start Here](./docs/learning/00-START-HERE.md)** - Introduction and roadmap
 - **[Quick Reference](./docs/learning/QUICK-REFERENCE.md)** - Cheat sheet for common tasks
 - **[Full Learning Docs](./docs/learning/)** - Complete guide from basics to advanced topics
-
-## 📋 Task Tracking
-
-- **[TODO.md](./TODO.md)** - Current tasks and priorities
-- **[NEXT_STEPS.md](./NEXT_STEPS.md)** - Detailed next steps and recommendations
 
 ## Features
 
@@ -176,7 +171,7 @@ Custom titles should persist despite dynamic changes.
 
 1. Set custom title for a site
 2. Go to `chrome://serviceworker-internals/`
-3. Find ReTitle service worker
+3. Find Tab ReTitle+ service worker
 4. Click "Stop"
 5. Navigate to the site → service worker should wake up and apply title
 
@@ -317,7 +312,7 @@ ISC
 
 ## Credits
 
-This is a modern clone of the original [ReTitle extension](https://github.com/Lazyuki/ReTitle) by Lazyuki.
+This Chrome extension is inspired by the original [Tab ReTitle extension](https://addons.mozilla.org/en-US/firefox/addon/tab-retitle/) for Firefox by Lazyuki.
 
 Built with:
 - [Vite](https://vitejs.dev/)

@@ -31,7 +31,7 @@ Every Chrome extension has these main parts:
 **Example:**
 ```json
 {
-  "name": "ReTitle",
+  "name": "Tab ReTitle+",
   "version": "3.0.0",
   "permissions": ["storage", "tabs"]
 }

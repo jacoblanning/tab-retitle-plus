@@ -1,7 +1,7 @@
 {
-  "name": "retitle-extension",
+  "name": "tab-retitle-plus",
   "version": "3.0.0",
-  "description": "Modern Chrome extension for renaming browser tab titles",
+  "description": "Chrome extension for renaming browser tab titles - inspired by Tab ReTitle for Firefox",
   "type": "module",
   "scripts": {
     "dev": "vite",

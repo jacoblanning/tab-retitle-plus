@@ -2,7 +2,7 @@ import { type Page, expect } from '@playwright/test';
 import { BasePage } from './base-page';
 
 /**
- * Page Object Model for the ReTitle options page
+ * Page Object Model for the Tab ReTitle+ options page
  * 
  * Encapsulates all interactions with the options/settings page
  */

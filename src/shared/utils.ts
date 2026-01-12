@@ -54,7 +54,7 @@ export function parseRegexPattern(input: string): {
  */
 export function debugLog(...args: any[]): void {
   // Always log for now - can be toggled via settings later
-  console.log('[ReTitle]', ...args);
+  console.log('[Tab ReTitle+]', ...args);
 }
 
 /**

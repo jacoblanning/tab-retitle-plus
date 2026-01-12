@@ -1,6 +1,6 @@
 # 🎓 Learning Guide - Start Here
 
-Welcome! This guide will help you understand and maintain the ReTitle Chrome Extension project.
+Welcome! This guide will help you understand, use, and contribute to the Tab ReTitle+ Chrome Extension project.
 
 ## 📚 How to Use This Guide
 

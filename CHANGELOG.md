@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.0] - 2026-01-11
 
 ### Added
-- Initial release of modern ReTitle extension
+- Initial release of Tab ReTitle+ extension for Chrome
 - Multiple storage options: one-time, tab-specific, exact URL, domain-wide
 - Template variable support: `{original}`, `$0`, `{url}`, `{domain}`
 - Live preview of title changes as you type
@@ -30,4 +30,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent storage using chrome.storage.sync
 
 ### Credits
-- Modern clone of the original [ReTitle extension](https://github.com/Lazyuki/ReTitle) by Lazyuki
+- Inspired by the original [Tab ReTitle extension](https://addons.mozilla.org/en-US/firefox/addon/tab-retitle/) for Firefox by Lazyuki

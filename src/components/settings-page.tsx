@@ -30,7 +30,7 @@ export function SettingsPage() {
     <div className="w-full max-w-2xl rounded-lg border border-border bg-card">
       {/* Header */}
       <div className="border-b border-border px-6 py-4">
-        <h1 className="text-2xl font-semibold text-foreground">ReTitle Settings</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Tab ReTitle+ Settings</h1>
       </div>
 
       <div className="divide-y divide-border">
@@ -82,7 +82,7 @@ export function SettingsPage() {
             </div>
 
             <p className="mb-4 text-sm text-muted-foreground">
-              Press this shortcut to quickly open the ReTitle popup on any page.
+              Press this shortcut to quickly open the Tab ReTitle+ popup on any page.
             </p>
 
             <button className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">

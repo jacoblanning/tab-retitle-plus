@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ReTitle - Custom Tab Titles",
+  "name": "Tab ReTitle+",
   "version": "3.0.0",
   "description": "Rename browser tab titles with powerful persistence options",
 
@@ -47,7 +47,7 @@
         "default": "Ctrl+Shift+E",
         "mac": "Command+Shift+E"
       },
-      "description": "Open ReTitle popup"
+      "description": "Open Tab ReTitle+ popup"
     }
   },
 

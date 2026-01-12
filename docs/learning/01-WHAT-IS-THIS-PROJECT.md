@@ -2,13 +2,13 @@
 
 ## 🎯 The Big Picture
 
-**ReTitle** is a Chrome browser extension that lets users **rename browser tab titles** with powerful options for saving those changes.
+**Tab ReTitle+** is a Chrome browser extension that lets users **rename browser tab titles** with powerful options for saving those changes.
 
 ## 🤔 What Problem Does It Solve?
 
 Have you ever had 10 tabs open and couldn't tell which one is which? Or wanted to add a label like `[PROD]` or `[REVIEW]` to a tab title?
 
-**ReTitle solves this** by letting you:
+**Tab ReTitle+ solves this** by letting you:
 - Change any tab's title to something more meaningful
 - Save those changes so they persist (don't disappear when you refresh)
 - Apply rules automatically (e.g., all GitHub tabs get a prefix)
@@ -23,7 +23,7 @@ Tab 3: "GitHub"
 ```
 *(Which one is production? Which is staging?)*
 
-**After using ReTitle:**
+**After using Tab ReTitle+:**
 ```
 Tab 1: "[PROD] GitHub - Dashboard"
 Tab 2: "[STAGING] GitHub - Pull Requests"

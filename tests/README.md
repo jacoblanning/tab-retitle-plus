@@ -1,6 +1,6 @@
 # Testing Guide
 
-This directory contains all tests for the ReTitle Chrome Extension.
+This directory contains all tests for the Tab ReTitle+ Chrome Extension.
 
 ## Structure
 
