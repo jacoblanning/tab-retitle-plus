@@ -24,8 +24,11 @@ export const test = base.extend<{
   extensionContext: async ({}, use) => {
     const pathToExtension = path.join(__dirname, '../../dist');
     const context = await chromium.launchPersistentContext('', {
+      // Keep headless: false to use full Chromium (not headless shell)
+      // Use --headless=new flag to run Chrome in headless mode with extension support
       headless: false,
       args: [
+        `--headless=new`, // Chrome's new headless mode supports extensions
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
