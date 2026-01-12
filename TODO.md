@@ -13,7 +13,7 @@ This file tracks tasks, improvements, and ideas for the ReTitle extension.
 ## 🔥 High Priority
 
 ### Testing & Quality
-- [ ] Fix Playwright extension fixture (extension ID detection)
+- [x] Fix Playwright extension fixture (extension ID detection) - 2026-01-12
 - [ ] Run first successful Playwright test
 - [ ] Add ESLint & Prettier configuration
 - [ ] Fix any linting errors in existing code
@@ -105,6 +105,10 @@ _Add ideas and feature requests here_
 
 _Move completed tasks here for reference_
 
+- [x] Fixed Playwright extension fixture for Manifest V3 (2026-01-12)
+  - Improved service worker detection using `waitForEvent('serviceworker')`
+  - Added multiple fallback methods for extension ID detection
+  - Better error messages with troubleshooting steps
 - [x] Set up shadcn/ui
 - [x] Fixed build configuration (HTML file paths)
 - [x] Created Page Object Model structure
@@ -135,6 +139,6 @@ _Add any notes, context, or reminders here_
 
 ---
 
-**Last Updated:** 2025-01-11
+**Last Updated:** 2026-01-12
 
 **Tip:** Use `Ctrl+F` to search for specific tasks or keywords.
