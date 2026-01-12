@@ -1,6 +1,8 @@
 import { test as base, chromium, type BrowserContext } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import os from 'os';
 
 // ES module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -23,17 +25,32 @@ export const test = base.extend<{
 }>({
   extensionContext: async ({}, use) => {
     const pathToExtension = path.join(__dirname, '../../dist');
-    const context = await chromium.launchPersistentContext('', {
+    // console.log(`[DEBUG] Loading extension from: ${pathToExtension}`);
+
+    // Create a temporary user data directory
+    const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chrome-user-data-'));
+
+    const context = await chromium.launchPersistentContext(userDataDir, {
       headless: false, // We must tell Playwright we are headed to allow extensions
+      // dumpio: true, // Capture browser logs - uncomment for debugging
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
         '--headless=new', // But we tell Chrome to run in new headless mode
+        '--no-sandbox', // Recommended for CI
+        '--disable-gpu', // Recommended for CI
       ],
     });
 
     await use(context);
     await context.close();
+
+    // Clean up user data directory
+    try {
+      fs.rmSync(userDataDir, { recursive: true, force: true });
+    } catch (e) {
+      // Ignore cleanup errors
+    }
   },
 
   extensionId: async ({ extensionContext }, use) => {
@@ -89,7 +106,7 @@ export const test = base.extend<{
       }
     }
 
-    // Final debug log if failed
+    // Fallback Debugging
     if (!extensionId) {
       logDebugInfo();
       throw new Error(
