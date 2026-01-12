@@ -1,0 +1,27 @@
+{
+  "name": "retitle-extension",
+  "version": "3.0.0",
+  "description": "Modern Chrome extension for renaming browser tab titles",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "chrome-extension",
+    "tab-titles",
+    "browser-extension"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chrome": "^0.1.33",
+    "@types/node": "^25.0.6",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}
