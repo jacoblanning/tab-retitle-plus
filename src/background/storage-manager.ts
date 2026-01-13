@@ -30,8 +30,11 @@ export class StorageManager {
     // Priority 1: Tab-specific
     if (tabId && data.tabTitles[tabId]) {
       debugLog('Match found: Tab-specific');
-      const template = data.tabTitles[tabId].title;
-      const processedTitle = processTitleTemplate(template, originalTitle, url);
+      const rule = data.tabTitles[tabId];
+      const template = rule.title;
+      // Use stored original title if available, fallback to current title
+      const titleToUse = rule.originalTitle || originalTitle;
+      const processedTitle = processTitleTemplate(template, titleToUse, url);
       return {
         title: processedTitle,
         type: 'tab',
@@ -42,7 +45,9 @@ export class StorageManager {
     // Priority 2: Exact URL
     if (data.urlTitles[url]) {
       debugLog('Match found: Exact URL');
-      const template = data.urlTitles[url].title;
+      const rule = data.urlTitles[url];
+      const template = rule.title;
+      // URL rules use current title (each URL may have different original title)
       const processedTitle = processTitleTemplate(template, originalTitle, url);
       return {
         title: processedTitle,
@@ -54,7 +59,9 @@ export class StorageManager {
     // Priority 3: Domain
     if (domain && data.domainTitles[domain]) {
       debugLog('Match found: Domain');
-      const template = data.domainTitles[domain].title;
+      const rule = data.domainTitles[domain];
+      const template = rule.title;
+      // Domain rules use current title (each page on domain has different original title)
       const processedTitle = processTitleTemplate(template, originalTitle, url);
       return {
         title: processedTitle,
@@ -112,7 +119,7 @@ export class StorageManager {
   async saveTitle(
     type: StorageType,
     title: string,
-    context: { tabId?: number; url?: string; domain?: string }
+    context: { tabId?: number; url?: string; domain?: string; originalTitle?: string }
   ): Promise<void> {
     const data = await this.getData();
 
@@ -122,9 +129,10 @@ export class StorageManager {
           data.tabTitles[context.tabId.toString()] = {
             title,
             originalUrl: context.url,
+            originalTitle: context.originalTitle || '',
             timestamp: Date.now(),
           };
-          debugLog('Saved tab-specific title:', { tabId: context.tabId, title });
+          debugLog('Saved tab-specific title:', { tabId: context.tabId, title, originalTitle: context.originalTitle });
         }
         break;
 
@@ -132,9 +140,10 @@ export class StorageManager {
         if (context.url) {
           data.urlTitles[context.url] = {
             title,
+            originalTitle: context.originalTitle || '',
             timestamp: Date.now(),
           };
-          debugLog('Saved URL title:', { url: context.url, title });
+          debugLog('Saved URL title:', { url: context.url, title, originalTitle: context.originalTitle });
         }
         break;
 
@@ -142,9 +151,10 @@ export class StorageManager {
         if (context.domain) {
           data.domainTitles[context.domain] = {
             title,
+            originalTitle: context.originalTitle || '',
             timestamp: Date.now(),
           };
-          debugLog('Saved domain title:', { domain: context.domain, title });
+          debugLog('Saved domain title:', { domain: context.domain, title, originalTitle: context.originalTitle });
         }
         break;
 

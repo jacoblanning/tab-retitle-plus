@@ -120,13 +120,9 @@ export class PopupPage extends BasePage {
    * Select storage type
    */
   async selectStorageType(type: 'once' | 'tab' | 'url' | 'domain'): Promise<void> {
-    const radioMap = {
-      once: this.storageTypeOnce(),
-      tab: this.storageTypeTab(),
-      url: this.storageTypeUrl(),
-      domain: this.storageTypeDomain(),
-    };
-    await radioMap[type].check();
+    // Click the label wrapper since the radio input is visually hidden (.sr-only)
+    const label = this.page.locator(`label:has(input[name="storage-type"][value="${type}"])`);
+    await label.click();
   }
 
   /**

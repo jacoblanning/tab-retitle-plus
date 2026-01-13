@@ -2,16 +2,19 @@
 export interface TabTitle {
   title: string;
   originalUrl: string;
+  originalTitle: string;
   timestamp: number;
 }
 
 export interface UrlTitle {
   title: string;
+  originalTitle: string;
   timestamp: number;
 }
 
 export interface DomainTitle {
   title: string;
+  originalTitle: string;
   timestamp: number;
 }
 
