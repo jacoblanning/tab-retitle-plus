@@ -9,9 +9,8 @@ class PopupApp {
   private storageType: StorageType = 'once';
 
   async init() {
-    // Get current tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    this.currentTab = tab;
+    // Get current tab (with test mode support)
+    await this.loadCurrentTab();
 
     // Attach event listeners
     this.attachListeners();
@@ -28,6 +27,35 @@ class PopupApp {
     if (input) {
       input.focus();
       input.select();
+    }
+  }
+
+  private async loadCurrentTab() {
+    // Check if we're in test mode (URL parameters provided)
+    const url = new URL(window.location.href);
+    const testMode = url.searchParams.get('testMode');
+
+    if (testMode === 'true') {
+      // Test mode: use mock data from URL parameters
+      const tabId = url.searchParams.get('tabId');
+      const tabUrl = url.searchParams.get('tabUrl');
+      const tabTitle = url.searchParams.get('tabTitle');
+
+      this.currentTab = {
+        id: tabId ? parseInt(tabId) : 1,
+        url: tabUrl || 'https://example.com',
+        title: tabTitle || 'Example Page',
+        active: true,
+        highlighted: true,
+        pinned: false,
+        incognito: false,
+        windowId: 1,
+        index: 0,
+      } as chrome.tabs.Tab;
+    } else {
+      // Production mode: query active tab
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      this.currentTab = tab;
     }
   }
 

@@ -31,12 +31,75 @@ export class PopupPage extends BasePage {
 
   /**
    * Navigate to popup
+   * Creates a real tab to interact with (more realistic testing)
    */
-  async goto(extensionId: string): Promise<void> {
-    await this.page.goto(`chrome-extension://${extensionId}/popup.html`);
+  async goto(extensionId: string, options?: { tabUrl?: string; tabTitle?: string }): Promise<void> {
+    const browserContext = this.page.context();
+
+    // Create a real tab that the popup can interact with
+    const targetPage = await browserContext.newPage();
+    const targetUrl = options?.tabUrl || 'https://example.com';
+
+    // Navigate to the target URL (or use a data URL with custom title)
+    if (options?.tabTitle) {
+      // Create a simple HTML page with the desired title
+      const html = `<!DOCTYPE html><html><head><title>${options.tabTitle}</title></head><body>Test Page</body></html>`;
+      await targetPage.goto(`data:text/html,${encodeURIComponent(html)}`);
+    } else {
+      await targetPage.goto(targetUrl).catch(() => {
+        // If navigation fails (blocked URL), use data URL
+        const html = `<!DOCTYPE html><html><head><title>Test Page</title></head><body>Test</body></html>`;
+        return targetPage.goto(`data:text/html,${encodeURIComponent(html)}`);
+      });
+    }
+
+    // Wait for page to be ready
+    await targetPage.waitForLoadState('domcontentloaded');
+
+    // Get all tabs and find the one matching our target page URL
+    const tabs = await browserContext.evaluate(() => {
+      return new Promise<chrome.tabs.Tab[]>((resolve) => {
+        chrome.tabs.query({}, (tabs) => {
+          resolve(tabs);
+        });
+      });
+    });
+
+    const targetPageUrl = targetPage.url();
+    const matchingTab = tabs.find(tab => tab.url === targetPageUrl);
+    const tabId = matchingTab?.id || tabs[tabs.length - 1]?.id || 1;
+
+    // Now open the popup with the real tab context
+    // Use the desired targetUrl, not the actual page URL (which might be a data URL)
+    const params = new URLSearchParams({
+      testMode: 'true',
+      tabId: tabId.toString(),
+      tabUrl: targetUrl, // Use the targetUrl option, not targetPage.url()
+      tabTitle: await targetPage.title(),
+    });
+
+    await this.page.goto(`chrome-extension://${extensionId}/popup.html?${params.toString()}`);
     await this.waitForReady();
     // Wait for popup to initialize
     await this.titleInput().waitFor({ state: 'visible' });
+
+    // Store reference to target page and tab ID for tests that need it
+    (this.page as any)._targetPage = targetPage;
+    (this.page as any)._targetTabId = tabId;
+  }
+
+  /**
+   * Get the target page created for this popup test
+   */
+  getTargetPage(): any {
+    return (this.page as any)._targetPage;
+  }
+
+  /**
+   * Get the target tab ID
+   */
+  getTargetTabId(): number {
+    return (this.page as any)._targetTabId;
   }
 
   /**

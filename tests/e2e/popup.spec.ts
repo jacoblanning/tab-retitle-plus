@@ -92,14 +92,29 @@ test.describe('Popup Functionality', () => {
 
   test('should display existing rules', async ({ extensionContext, extensionId }) => {
     // Set up storage with existing rules
+    // NOTE: example.com navigates to https://example.com/ (with trailing slash)
+    const testUrl = 'https://example.com/';
     const storageHelper = new StorageHelper(extensionContext);
-    await storageHelper.setUrlTitle('https://example.com', '[TEST] Example');
+    await storageHelper.setUrlTitle(testUrl, '[TEST] Example');
+
+    // Verify storage was set
+    const stored = await storageHelper.getStorage();
+    if (!stored.urlTitles || !stored.urlTitles[testUrl]) {
+      // Give a short retry window if service worker hasn't persisted yet
+      await new Promise(r => setTimeout(r, 200));
+      const stored2 = await storageHelper.getStorage();
+      expect(stored2.urlTitles && stored2.urlTitles[testUrl]).toBeDefined();
+    }
 
     const popupPage = new PopupPage(await extensionContext.newPage());
-    await popupPage.goto(extensionId);
+    // Pass the URL that matches our stored rule
+    await popupPage.goto(extensionId, {
+      tabUrl: testUrl,
+      tabTitle: 'Example Domain'
+    });
 
-    // Wait for rules to load
-    await popupPage.page.waitForTimeout(1000);
+    // Wait for rules container to become visible (more reliable than fixed timeout)
+    await popupPage.existingRulesContainer().waitFor({ state: 'visible', timeout: 2000 });
 
     const hasRules = await popupPage.hasExistingRules();
     expect(hasRules).toBe(true);
