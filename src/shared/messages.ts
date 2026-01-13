@@ -26,6 +26,7 @@ export interface SaveTitlePayload {
   tabId?: number;
   url?: string;
   domain?: string;
+  originalTitle?: string;
 }
 
 export interface DeleteTitlePayload {

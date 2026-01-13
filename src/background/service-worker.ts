@@ -193,7 +193,7 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
   switch (message.type) {
     case 'SAVE_TITLE': {
       const payload = message.payload as SaveTitlePayload;
-      const { title, storageType, tabId, url } = payload;
+      const { title, storageType, tabId, url, originalTitle } = payload;
 
       debugLog('Saving title:', payload);
 
@@ -237,7 +237,7 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
 
       // For persistent storage types, save to storage
       const domain = url ? getDomain(url) : undefined;
-      await storage.saveTitle(storageType, title, { tabId, url, domain });
+      await storage.saveTitle(storageType, title, { tabId, url, domain, originalTitle });
 
       // If we have a tab ID, apply the title immediately
       if (tabId) {

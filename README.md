@@ -1,6 +1,6 @@
 # Tab ReTitle+
 
-A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/en-US/firefox/addon/tab-retitle/) for Firefox by Lazyuki. Built with TypeScript, Vite, and Tailwind CSS. Rename browser tab titles with powerful persistence options.
+A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/en-US/firefox/addon/tab-retitle/) for Firefox by Lazyuki. Built with React, TypeScript, Vite, and Tailwind CSS. Rename browser tab titles with powerful persistence options.
 
 ## 📚 Learning Resources
 
@@ -19,10 +19,11 @@ A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/e
   - Domain-wide: Applies to all pages on the same domain
 
 - **Modern Tech Stack:**
+  - React 18 for modern UI development
   - Manifest V3 (required for Chrome Web Store)
   - TypeScript for type safety
-  - Vite for fast builds
-  - Tailwind CSS for modern styling
+  - Vite for fast builds and optimized bundling
+  - Tailwind CSS for modern, dark-themed styling
 
 - **Template Variables:**
   - Use `{original}` or `$0` to include the original page title
@@ -42,30 +43,42 @@ A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/e
 ## Project Structure
 
 ```
-retitle-extension/
+tab-retitle-plus/
 ├── src/
 │   ├── background/
 │   │   ├── service-worker.ts          # Main service worker
 │   │   └── storage-manager.ts         # Storage & priority logic
 │   ├── content/
-│   │   └── title-updater.ts           # Title modification
+│   │   └── title-updater.ts           # Title modification content script
 │   ├── popup/
-│   │   ├── popup.html
-│   │   ├── popup.ts
-│   │   └── styles/popup.css
+│   │   ├── popup.html                 # Popup HTML entry point
+│   │   ├── index.tsx                  # React root
+│   │   └── popup-app.tsx              # Main popup React component
 │   ├── options/
-│   │   ├── options.html
-│   │   ├── options.ts
-│   │   └── styles/options.css
-│   └── shared/
-│       ├── types.ts                   # TypeScript types
-│       ├── constants.ts               # Constants
-│       ├── messages.ts                # Message passing
-│       └── utils.ts                   # Utilities
+│   │   ├── options.html               # Options HTML entry point
+│   │   ├── index.tsx                  # React root
+│   │   └── options-app.tsx            # Main options React component
+│   ├── hooks/
+│   │   ├── useCurrentTab.ts           # React hook for current tab
+│   │   ├── useExtensionStorage.ts     # React hook for Chrome storage
+│   │   └── useMessages.ts             # React hook for message passing
+│   ├── components/
+│   │   ├── extension-popup.tsx        # v0 design reference (not used)
+│   │   └── settings-page.tsx          # v0 design reference (not used)
+│   ├── shared/
+│   │   ├── types.ts                   # TypeScript types
+│   │   ├── constants.ts               # Constants
+│   │   ├── messages.ts                # Message passing utilities
+│   │   └── utils.ts                   # Shared utilities
+│   └── styles/
+│       └── globals.css                # Global styles & Tailwind config
 ├── public/
 │   ├── manifest.json
 │   └── icons/
-└── dist/                              # Build output
+├── tests/
+│   ├── e2e/                           # Playwright E2E tests
+│   └── fixtures/                      # Test fixtures
+└── dist/                              # Build output (generated)
 ```
 
 ## Installation & Build
@@ -120,9 +133,32 @@ npm run dev
 3. Click the refresh icon in `chrome://extensions/` for your extension
 4. Test changes
 
-**Note:** Service worker and content script changes require a full extension reload. Popup and options pages can be developed using Vite's dev server for hot reload.
+**Note:** Service worker and content script changes require a full extension reload. The popup and options pages are React applications and can be developed using Vite's dev server for hot reload (though Chrome extension APIs won't be available in dev mode).
 
 ## Testing
+
+### Automated Testing
+
+The extension includes end-to-end tests using Playwright:
+
+```bash
+# Run all E2E tests
+npx playwright test
+
+# Run tests in headed mode (visible browser)
+npx playwright test --headed
+
+# Run specific test file
+npx playwright test tests/e2e/popup.spec.ts
+```
+
+**Test Coverage:**
+- Popup functionality (all storage types)
+- Title preview
+- Existing rules display
+- Clear functionality
+
+**Note:** Chrome extensions require headed mode for testing. The CI uses `xvfb` for virtual display support.
 
 ### Manual Testing Checklist
 
@@ -191,6 +227,26 @@ Custom titles should persist despite dynamic changes.
 
 ## Architecture
 
+### React UI Components
+
+**Popup** (`src/popup/popup-app.tsx`):
+- Custom React hooks for Chrome APIs (`useCurrentTab`, `useMessages`)
+- Real-time preview of title changes
+- Storage type selector with custom radio buttons
+- Existing rules management
+- Dark-themed UI matching design mocks
+
+**Options Page** (`src/options/options-app.tsx`):
+- Settings management (bookmark titles, context menu, debug mode)
+- Saved titles display and deletion
+- Keyboard shortcut customization
+- Real-time storage updates
+
+**Custom Hooks**:
+- `useCurrentTab`: Manages current tab state with test mode support
+- `useExtensionStorage`: React wrapper for `chrome.storage.sync`
+- `useMessages`: Typed message passing to service worker
+
 ### Service Worker (Background Script)
 
 **Key Features:**
@@ -244,13 +300,16 @@ See `public/icons/README.md` for icon creation instructions.
 
 ### Styling
 
-The extension uses Tailwind CSS. To modify styles:
+The extension uses Tailwind CSS with a dark theme. To modify styles:
 
-1. Edit Tailwind classes in HTML files (`src/popup/popup.html`, `src/options/options.html`)
-2. Modify theme in `tailwind.config.js`
-3. Rebuild: `npm run build`
+1. Edit Tailwind classes in React components (`src/popup/popup-app.tsx`, `src/options/options-app.tsx`)
+2. Modify theme colors in `src/styles/globals.css` (CSS variables)
+3. Update Tailwind config in `tailwind.config.js`
+4. Rebuild: `npm run build`
 
-Primary color: `#2563eb` (blue-600)
+The extension uses semantic color tokens (e.g., `bg-card`, `text-foreground`) that adapt based on the dark mode theme defined in `globals.css`.
+
+Primary color: `hsl(217.2 91.2% 59.8%)` (blue)
 
 ## Troubleshooting
 
@@ -315,7 +374,10 @@ ISC
 This Chrome extension is inspired by the original [Tab ReTitle extension](https://addons.mozilla.org/en-US/firefox/addon/tab-retitle/) for Firefox by Lazyuki.
 
 Built with:
-- [Vite](https://vitejs.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
+- [React](https://react.dev/) - UI library
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Vite](https://vitejs.dev/) - Build tool
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [Lucide React](https://lucide.dev/) - Icons
+- [Playwright](https://playwright.dev/) - E2E testing
 - [Chrome Extensions API](https://developer.chrome.com/docs/extensions/)
