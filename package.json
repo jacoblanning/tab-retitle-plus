@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "package": "bash scripts/package-for-release.sh"
   },
   "keywords": [
     "chrome-extension",
