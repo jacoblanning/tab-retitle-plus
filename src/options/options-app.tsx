@@ -27,12 +27,23 @@ export function OptionsApp() {
     tabTitles: [],
   });
   const [loading, setLoading] = useState(true);
+  const [shortcut, setShortcut] = useState<string | null>(null);
 
   // Load settings and saved titles
   useEffect(() => {
     loadSettings();
     loadSavedTitles();
+    loadShortcut();
   }, []);
+
+  const loadShortcut = () => {
+    chrome.commands.getAll((commands) => {
+      const executeAction = commands.find(cmd => cmd.name === '_execute_action');
+      if (executeAction) {
+        setShortcut(executeAction.shortcut || '');
+      }
+    });
+  };
 
   const loadSettings = async () => {
     try {
@@ -174,17 +185,16 @@ export function OptionsApp() {
           <h2 className="text-2xl font-semibold mb-4 text-foreground">Keyboard Shortcut</h2>
           <div className="bg-primary/10 border border-primary/30 rounded-md p-4 mb-4">
             <p className="text-sm text-foreground mb-2">
-              <span className="font-semibold">Default shortcut:</span>{' '}
-              <kbd className="px-2 py-1 bg-muted border border-border rounded text-sm font-mono text-foreground">
-                Ctrl+Shift+E
-              </kbd>
-              <span className="text-muted-foreground ml-2">
-                (Mac:{' '}
+              <span className="font-semibold">Current shortcut:</span>{' '}
+              {shortcut === null ? (
+                <span className="text-muted-foreground">Loading...</span>
+              ) : shortcut === '' ? (
+                <span className="text-muted-foreground">Not set</span>
+              ) : (
                 <kbd className="px-2 py-1 bg-muted border border-border rounded text-sm font-mono text-foreground">
-                  Cmd+Shift+E
+                  {shortcut}
                 </kbd>
-                )
-              </span>
+              )}
             </p>
             <p className="text-sm text-muted-foreground mb-3">
               Press this shortcut to quickly open the Tab ReTitle+ popup on any page.
@@ -192,12 +202,14 @@ export function OptionsApp() {
             <button
               onClick={handleCustomizeShortcut}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+              id="customize-shortcut-btn"
             >
               Customize Keyboard Shortcut
             </button>
             <p className="text-xs text-muted-foreground mt-2">
-              Note: If the shortcut doesn't work, it may conflict with another extension or Chrome feature. Click
-              above to change it.
+              Default: <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-xs font-mono">Ctrl+Shift+E</kbd> (Mac: <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-xs font-mono">Cmd+Shift+E</kbd>)
+              {shortcut === '' && ' - No shortcut currently set. Click above to configure one.'}
+              {shortcut && shortcut !== '' && shortcut !== 'Ctrl+Shift+E' && shortcut !== 'Command+Shift+E' && ' - You have customized this shortcut.'}
             </p>
           </div>
         </section>

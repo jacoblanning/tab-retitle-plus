@@ -137,6 +137,12 @@ export default defineConfig({
           resolve(__dirname, 'dist/manifest.json')
         );
 
+        // Copy theme.js
+        fs.copyFileSync(
+          resolve(__dirname, 'public/theme.js'),
+          resolve(__dirname, 'dist/theme.js')
+        );
+
         // Copy icons directory
         const iconsDir = resolve(__dirname, 'public/icons');
         const distIconsDir = resolve(__dirname, 'dist/icons');

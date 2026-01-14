@@ -26,6 +26,7 @@ export function PopupApp() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
   const [existingRules, setExistingRules] = useState<ExistingRule[]>([]);
+  const [shortcut, setShortcut] = useState<string | null>(null);
 
   const storageOptions: { value: StorageTypeValue; label: string; description: string }[] = [
     { value: 'once', label: 'One-time', description: 'this session only' },
@@ -43,6 +44,16 @@ export function PopupApp() {
       loadExistingRules();
     }
   }, [tab]);
+
+  // Load keyboard shortcut
+  useEffect(() => {
+    chrome.commands.getAll((commands) => {
+      const executeAction = commands.find(cmd => cmd.name === '_execute_action');
+      if (executeAction) {
+        setShortcut(executeAction.shortcut || '');
+      }
+    });
+  }, []);
 
   const loadExistingRules = async () => {
     if (!tab || !tab.url) return;
@@ -291,9 +302,15 @@ export function PopupApp() {
         <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Keyboard className="h-3 w-3" />
           <span>Shortcut:</span>
-          <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-            Ctrl+Shift+E
-          </kbd>
+          {shortcut === null ? (
+            <span className="text-xs text-muted-foreground">Loading...</span>
+          ) : shortcut === '' ? (
+            <span className="text-xs text-muted-foreground">Not set</span>
+          ) : (
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
+              {shortcut}
+            </kbd>
+          )}
           <button onClick={handleOpenOptions} className="cursor-pointer text-primary hover:underline text-xs" id="open-options">
             (Options)
           </button>
