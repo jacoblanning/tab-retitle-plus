@@ -62,9 +62,6 @@ tab-retitle-plus/
 │   │   ├── useCurrentTab.ts           # React hook for current tab
 │   │   ├── useExtensionStorage.ts     # React hook for Chrome storage
 │   │   └── useMessages.ts             # React hook for message passing
-│   ├── components/
-│   │   ├── extension-popup.tsx        # v0 design reference (not used)
-│   │   └── settings-page.tsx          # v0 design reference (not used)
 │   ├── shared/
 │   │   ├── types.ts                   # TypeScript types
 │   │   ├── constants.ts               # Constants

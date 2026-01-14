@@ -191,8 +191,8 @@ export function PopupApp() {
   return (
     <div className="w-[320px] rounded-lg border border-border bg-card shadow-xl">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h1 className="text-lg font-semibold text-foreground">Tab ReTitle+</h1>
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <h1 className="text-base font-semibold text-foreground">Tab ReTitle+</h1>
         <button
           onClick={handleOpenOptions}
           className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -203,10 +203,10 @@ export function PopupApp() {
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-3">
         {/* Custom Title Input */}
-        <div className="mb-4">
-          <label htmlFor="title-input" className="mb-2 block text-sm font-medium text-foreground">
+        <div className="mb-3">
+          <label htmlFor="title-input" className="mb-1.5 block text-sm font-medium text-foreground">
             Custom Title
           </label>
           <input
@@ -215,32 +215,32 @@ export function PopupApp() {
             value={customTitle}
             onChange={(e) => setCustomTitle(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSave()}
-            className="w-full rounded-md border border-primary bg-background px-3 py-2 text-sm text-foreground outline-none ring-2 ring-primary/30 transition-all focus:ring-primary/50"
+            className="w-full rounded-md border border-primary bg-background px-3 py-1.5 text-sm text-foreground outline-none ring-2 ring-primary/30 transition-all focus:ring-primary/50"
             placeholder="Enter custom title..."
             autoFocus
           />
         </div>
 
         {/* Preview */}
-        <div id="preview-container" className="mb-4">
-          <span className="mb-2 block text-sm text-muted-foreground">Preview:</span>
-          <div id="title-preview" className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
+        <div id="preview-container" className="mb-3">
+          <span className="mb-1.5 block text-sm text-muted-foreground">Preview:</span>
+          <div id="title-preview" className="rounded-md bg-muted px-3 py-1.5 text-sm text-foreground">
             {getPreviewText() || customTitle || 'No title set'}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             Use <code className="rounded bg-muted px-1 py-0.5 text-primary">{'{original}'}</code> or{' '}
             <code className="rounded bg-muted px-1 py-0.5 text-primary">$0</code> to include the original title
           </p>
         </div>
 
         {/* Storage Type */}
-        <div className="mb-4">
-          <span className="mb-2 block text-sm font-medium text-foreground">Storage Type</span>
-          <div className="space-y-2">
+        <div className="mb-3">
+          <span className="mb-1.5 block text-sm font-medium text-foreground">Storage Type</span>
+          <div className="space-y-1">
             {storageOptions.map((option) => (
               <label
                 key={option.value}
-                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
+                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1 transition-colors hover:bg-muted"
               >
                 <div
                   className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors ${
@@ -287,23 +287,23 @@ export function PopupApp() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border px-4 py-3">
-        <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="border-t border-border px-3 py-2">
+        <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Keyboard className="h-3 w-3" />
           <span>Shortcut:</span>
           <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
             Ctrl+Shift+E
           </kbd>
-          <button onClick={handleOpenOptions} className="cursor-pointer text-primary hover:underline" id="open-options">
-            (customizable in Options)
+          <button onClick={handleOpenOptions} className="cursor-pointer text-primary hover:underline text-xs" id="open-options">
+            (Options)
           </button>
         </div>
-        <div className="space-y-1 text-xs">
+        <div className="space-y-0.5 text-xs">
           <div className="text-muted-foreground">
-            Current URL: <span id="current-url" className="text-foreground">{tab ? getDomain(tab.url || '') || tab.url : ''}</span>
+            URL: <span id="current-url" className="text-foreground">{tab ? getDomain(tab.url || '') || tab.url : ''}</span>
           </div>
           <div id="current-title-display" className="text-muted-foreground">
-            Current Title: <span id="current-title" className="text-foreground">{tab?.title || ''}</span>
+            Title: <span id="current-title" className="text-foreground">{tab?.title || ''}</span>
           </div>
         </div>
       </div>
