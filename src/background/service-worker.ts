@@ -23,10 +23,6 @@ function injectTitleWithObserver(newTitle: string): void {
   document.title = newTitle;
 
   // Set up observer to handle dynamic title changes by the page
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-  }
-
   mutationObserver = new MutationObserver(() => {
     if (currentCustomTitle && document.title !== currentCustomTitle) {
       document.title = currentCustomTitle;
@@ -179,7 +175,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
  * Handle tab removal - clean up cache and storage
  * CRITICAL: This listener MUST be at top level for MV3
  */
-chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+chrome.tabs.onRemoved.addListener(async (tabId, _removeInfo) => {
   debugLog('Tab removed:', { tabId });
 
   // Remove from cache
@@ -205,11 +201,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
  * Handle messages from popup and options pages
  * CRITICAL: This listener MUST be at top level for MV3
  */
-chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: Message, _sender, sendResponse) => {
   debugLog('Service worker received message:', message);
 
   // Handle messages asynchronously
-  handleMessage(message, sender)
+  handleMessage(message, _sender)
     .then(response => {
       sendResponse(response);
     })
@@ -225,7 +221,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
 /**
  * Handle different message types
  */
-async function handleMessage(message: Message, sender: chrome.runtime.MessageSender) {
+async function handleMessage(message: Message, _sender: chrome.runtime.MessageSender) {
   const storage = StorageManager.getInstance();
 
   switch (message.type) {
