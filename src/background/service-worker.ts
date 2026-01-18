@@ -1,13 +1,54 @@
 import { StorageManager } from './storage-manager';
 import type { Message, SaveTitlePayload, DeleteTitlePayload } from '@shared/messages';
 import { CONTEXT_MENU_ID } from '@shared/constants';
-import { getDomain, debugLog } from '@shared/utils';
+import { getDomain, debugLog, processTitleTemplate, isCustomizableUrl, validateTitleLength } from '@shared/utils';
 import { createMessage } from '@shared/messages';
 import type { UpdateTitlePayload } from '@shared/messages';
 
 // In-memory cache for loop prevention
 // Maps tabId to the custom title we just set
 const titleCache = new Map<number, string>();
+
+/**
+ * Injects title update logic with MutationObserver directly into the page.
+ * This is used as a fallback when the content script isn't ready.
+ * MV3-safe: No setTimeout, all logic executes in the injected context.
+ */
+function injectTitleWithObserver(newTitle: string): void {
+  // Store the custom title
+  let currentCustomTitle: string | null = newTitle;
+  let mutationObserver: MutationObserver | null = null;
+
+  // Set the title
+  document.title = newTitle;
+
+  // Set up observer to handle dynamic title changes by the page
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+  }
+
+  mutationObserver = new MutationObserver(() => {
+    if (currentCustomTitle && document.title !== currentCustomTitle) {
+      document.title = currentCustomTitle;
+    }
+  });
+
+  const titleElement = document.querySelector('title');
+  if (titleElement) {
+    mutationObserver.observe(titleElement, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  }
+
+  // Clean up on page unload
+  window.addEventListener('beforeunload', () => {
+    if (mutationObserver) {
+      mutationObserver.disconnect();
+    }
+  });
+}
 
 /**
  * Initialize extension on install
@@ -60,6 +101,18 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     return;
   }
 
+  // Skip internal browser pages (chrome://, about:, etc.)
+  if (!isCustomizableUrl(tab.url)) {
+    debugLog('Skipping internal browser page:', tab.url);
+    return;
+  }
+
+  // Skip incognito tabs - don't apply persistent rules for privacy
+  if (tab.incognito) {
+    debugLog('Skipping incognito tab - persistent titles not applied');
+    return;
+  }
+
   const currentTitle = changeInfo.title;
   const cachedTitle = titleCache.get(tabId);
 
@@ -97,35 +150,20 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         } as UpdateTitlePayload));
         debugLog('Successfully sent UPDATE_TITLE message');
       } catch (error) {
-        console.error('Error sending message to content script:', error);
-        debugLog('Content script not ready, injecting title directly...');
+        debugLog('Content script not ready, using fallback injection with observer');
 
-        // Fallback: Inject title directly using scripting API
+        // Fallback: Inject title with MutationObserver directly
+        // This is MV3-safe as it doesn't use setTimeout
         try {
           await chrome.scripting.executeScript({
             target: { tabId },
-            func: (newTitle: string) => {
-              document.title = newTitle;
-            },
+            func: injectTitleWithObserver,
             args: [match.title],
           });
-          debugLog('Successfully injected title directly');
-
-          // Retry sending message after a delay to set up MutationObserver
-          setTimeout(async () => {
-            try {
-              await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
-                title: match.title,
-              } as UpdateTitlePayload));
-              debugLog('Retry: Successfully sent UPDATE_TITLE message to content script');
-            } catch (retryError) {
-              debugLog('Retry failed, content script may not be available');
-            }
-          }, 500); // Wait 500ms for content script to load
-
+          debugLog('Successfully injected title with observer');
         } catch (scriptError) {
           console.error('Error injecting title:', scriptError);
-          // Remove from cache if both methods failed
+          // Remove from cache if injection failed
           titleCache.delete(tabId);
         }
       }
@@ -197,36 +235,56 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
 
       debugLog('Saving title:', payload);
 
+      // Validate title length
+      const titleValidation = validateTitleLength(title);
+      if (!titleValidation.isValid) {
+        debugLog('Title validation failed:', titleValidation.error);
+        return {
+          success: false,
+          error: titleValidation.error
+        };
+      }
+
+      // Validate URL is customizable (not an internal browser page)
+      if (url && !isCustomizableUrl(url)) {
+        debugLog('Cannot save title for internal browser page:', url);
+        return {
+          success: false,
+          error: 'Cannot customize titles for internal browser pages (chrome://, about:, etc.)'
+        };
+      }
+
+      // Check if tab is in incognito mode
+      let isIncognito = false;
+      if (tabId) {
+        try {
+          const tabInfo = await chrome.tabs.get(tabId);
+          isIncognito = tabInfo.incognito || false;
+        } catch (error) {
+          debugLog('Error checking incognito status:', error);
+        }
+      }
+
       // For one-time titles, just update the tab directly without saving to storage
       if (storageType === 'once' && tabId) {
-        titleCache.set(tabId, title);
+        // Process template before applying
+        const processedTitle = processTitleTemplate(title, originalTitle || '', url);
+        titleCache.set(tabId, processedTitle);
         try {
           await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
-            title,
+            title: processedTitle,
           } as UpdateTitlePayload));
           return { success: true };
         } catch (error) {
-          debugLog('Message failed, injecting directly...');
-          // Fallback: Inject title directly
+          debugLog('Content script not ready, using fallback injection with observer');
+          // Fallback: Inject title with MutationObserver directly
           try {
             await chrome.scripting.executeScript({
               target: { tabId },
-              func: (newTitle: string) => { document.title = newTitle; },
-              args: [title],
+              func: injectTitleWithObserver,
+              args: [processedTitle],
             });
-
-            // Retry message to set up MutationObserver
-            setTimeout(async () => {
-              try {
-                await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
-                  title,
-                } as UpdateTitlePayload));
-                debugLog('Retry: Content script received message');
-              } catch (retryError) {
-                debugLog('Retry failed');
-              }
-            }, 500);
-
+            debugLog('Successfully injected title with observer');
             return { success: true };
           } catch (scriptError) {
             titleCache.delete(tabId);
@@ -235,40 +293,38 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
         }
       }
 
+      // Don't persist titles for incognito tabs (except one-time titles which are handled above)
+      if (isIncognito) {
+        debugLog('Skipping storage for incognito tab');
+        return {
+          success: false,
+          error: 'Cannot save persistent titles in incognito mode. Use "One-time" storage type instead.'
+        };
+      }
+
       // For persistent storage types, save to storage
       const domain = url ? getDomain(url) : undefined;
       await storage.saveTitle(storageType, title, { tabId, url, domain, originalTitle });
 
       // If we have a tab ID, apply the title immediately
       if (tabId) {
-        titleCache.set(tabId, title);
+        // Process template before applying
+        const processedTitle = processTitleTemplate(title, originalTitle || '', url);
+        titleCache.set(tabId, processedTitle);
         try {
           await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
-            title,
+            title: processedTitle,
           } as UpdateTitlePayload));
         } catch (error) {
-          console.error('Error applying title immediately:', error);
-          debugLog('Message failed, injecting directly...');
-          // Fallback: Inject title directly
+          debugLog('Content script not ready, using fallback injection with observer');
+          // Fallback: Inject title with MutationObserver directly
           try {
             await chrome.scripting.executeScript({
               target: { tabId },
-              func: (newTitle: string) => { document.title = newTitle; },
-              args: [title],
+              func: injectTitleWithObserver,
+              args: [processedTitle],
             });
-
-            // Retry message to set up MutationObserver
-            setTimeout(async () => {
-              try {
-                await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
-                  title,
-                } as UpdateTitlePayload));
-                debugLog('Retry: Content script received message');
-              } catch (retryError) {
-                debugLog('Retry failed');
-              }
-            }, 500);
-
+            debugLog('Successfully injected title with observer');
           } catch (scriptError) {
             console.error('Error injecting title:', scriptError);
           }
@@ -287,6 +343,11 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
     case 'GET_SAVED_TITLES': {
       const titles = await storage.getAllTitles();
       return titles;
+    }
+
+    case 'GET_QUOTA_INFO': {
+      const quotaInfo = await storage.getQuotaInfo();
+      return quotaInfo;
     }
 
     default:

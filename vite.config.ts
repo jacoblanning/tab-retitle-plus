@@ -2,6 +2,9 @@ import { defineConfig, build as viteBuild } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
+// Determine if we're in production mode
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Build configuration for extension scripts (service worker & content script)
 const buildScript = (entry: string, outFile: string) => {
   return viteBuild({
@@ -21,7 +24,7 @@ const buildScript = (entry: string, outFile: string) => {
       },
       outDir: 'dist',
       emptyOutDir: false,
-      minify: false,
+      minify: isProduction ? 'esbuild' : false,
       rollupOptions: {
         output: {
           extend: true,
@@ -59,7 +62,7 @@ export default defineConfig({
     },
     outDir: 'dist',
     emptyOutDir: true,
-    minify: false,
+    minify: isProduction ? 'esbuild' : false,
   },
   plugins: [
     react(),

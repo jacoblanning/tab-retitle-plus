@@ -22,6 +22,35 @@ export function isValidUrl(url: string): boolean {
 }
 
 /**
+ * Check if URL is customizable (not an internal browser page)
+ * Returns false for chrome://, about:, edge://, chrome-extension://, etc.
+ */
+export function isCustomizableUrl(url: string): boolean {
+  if (!url) return false;
+
+  try {
+    const parsedUrl = new URL(url);
+    const scheme = parsedUrl.protocol.replace(':', '');
+
+    // Allow only http, https, file protocols
+    const allowedSchemes = ['http', 'https', 'file'];
+
+    if (!allowedSchemes.includes(scheme)) {
+      return false;
+    }
+
+    // Additional check: Don't allow chrome web store URLs as they have special handling
+    if (parsedUrl.hostname === 'chrome.google.com' || parsedUrl.hostname === 'chromewebstore.google.com') {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validate regex pattern
  */
 export function isValidRegex(pattern: string, flags: string): boolean {
@@ -46,6 +75,24 @@ export function parseRegexPattern(input: string): {
 
   const [, pattern, replacement, flags] = match;
   return { pattern, replacement, flags };
+}
+
+/**
+ * Validate title length
+ * Returns an object with isValid boolean and optional error message
+ */
+export function validateTitleLength(title: string): { isValid: boolean; error?: string } {
+  const trimmedTitle = title.trim();
+
+  if (trimmedTitle.length === 0) {
+    return { isValid: false, error: 'Title cannot be empty' };
+  }
+
+  if (trimmedTitle.length > 500) {
+    return { isValid: false, error: 'Title is too long (maximum 500 characters)' };
+  }
+
+  return { isValid: true };
 }
 
 /**

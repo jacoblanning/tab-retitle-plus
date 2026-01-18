@@ -2,8 +2,17 @@ import type { StorageData, TitleMatch, StorageType, TabTitle, UrlTitle, DomainTi
 import { DEFAULT_SETTINGS, PRIORITY } from '@shared/constants';
 import { getDomain, isValidRegex, debugLog, processTitleTemplate } from '@shared/utils';
 
+// Chrome storage.sync quota limits
+const QUOTA_BYTES = 102400; // 100 KB
+const QUOTA_BYTES_PER_ITEM = 8192; // 8 KB
+const MAX_ITEMS = 512;
+const QUOTA_WARNING_THRESHOLD = 0.8; // Warn at 80% usage
+
 export class StorageManager {
   private static instance: StorageManager;
+  private dataCache: StorageData | null = null;
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_TTL = 5000; // Cache time-to-live: 5 seconds
 
   private constructor() {}
 
@@ -12,6 +21,23 @@ export class StorageManager {
       this.instance = new StorageManager();
     }
     return this.instance;
+  }
+
+  /**
+   * Invalidate the cache, forcing next getData() to fetch from storage
+   */
+  private invalidateCache(): void {
+    this.dataCache = null;
+    this.cacheTimestamp = 0;
+  }
+
+  /**
+   * Check if cache is valid
+   */
+  private isCacheValid(): boolean {
+    if (!this.dataCache) return false;
+    const now = Date.now();
+    return (now - this.cacheTimestamp) < this.CACHE_TTL;
   }
 
   /**
@@ -71,6 +97,7 @@ export class StorageManager {
     }
 
     // Priority 4: Regex patterns
+    // Note: Regex UI not yet implemented - backend ready for future release
     for (const pattern of data.regexPatterns) {
       try {
         if (!isValidRegex(pattern.pattern, pattern.flags)) {
@@ -242,12 +269,19 @@ export class StorageManager {
   }
 
   /**
-   * Get or initialize storage data
+   * Get or initialize storage data (with caching)
    */
   private async getData(): Promise<StorageData> {
+    // Return cached data if valid
+    if (this.isCacheValid()) {
+      debugLog('Using cached storage data');
+      return this.dataCache!;
+    }
+
+    // Fetch from storage
     const result = await chrome.storage.sync.get(null);
 
-    debugLog('Raw storage data:', result);
+    debugLog('Fetched storage data from chrome.storage.sync');
 
     const data: StorageData = {
       tabTitles: (result.tabTitles as Record<string, TabTitle>) || {} as Record<string, TabTitle>,
@@ -264,19 +298,94 @@ export class StorageManager {
       regexPatternsCount: data.regexPatterns.length,
     });
 
+    // Update cache
+    this.dataCache = data;
+    this.cacheTimestamp = Date.now();
+
     return data;
   }
 
   /**
-   * Save data to storage
+   * Save data to storage with quota error handling
    */
   private async setData(data: Partial<StorageData>): Promise<void> {
     debugLog('Saving to storage:', {
       keys: Object.keys(data),
       data: data
     });
-    await chrome.storage.sync.set(data);
-    debugLog('Storage save complete');
+
+    try {
+      await chrome.storage.sync.set(data);
+      debugLog('Storage save complete');
+
+      // Invalidate cache after successful write
+      this.invalidateCache();
+
+      // Check quota after successful save and warn if approaching limit
+      const quotaInfo = await this.getQuotaInfo();
+      if (quotaInfo.percentUsed >= QUOTA_WARNING_THRESHOLD * 100) {
+        console.warn(`Storage quota warning: ${quotaInfo.percentUsed.toFixed(1)}% used (${quotaInfo.bytesInUse}/${QUOTA_BYTES} bytes)`);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('QUOTA_EXCEEDED')) {
+        const quotaInfo = await this.getQuotaInfo();
+        const message = `Storage quota exceeded! Used: ${quotaInfo.bytesInUse}/${QUOTA_BYTES} bytes. Please delete some saved titles to free up space.`;
+        console.error(message);
+        throw new Error(message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get storage quota information
+   */
+  async getQuotaInfo(): Promise<{
+    bytesInUse: number;
+    totalBytes: number;
+    percentUsed: number;
+    itemCount: number;
+    maxItems: number;
+    isApproachingLimit: boolean;
+    isOverLimit: boolean;
+  }> {
+    const bytesInUse = await chrome.storage.sync.getBytesInUse(null);
+    const allData = await chrome.storage.sync.get(null);
+    const itemCount = Object.keys(allData).length;
+    const percentUsed = (bytesInUse / QUOTA_BYTES) * 100;
+
+    return {
+      bytesInUse,
+      totalBytes: QUOTA_BYTES,
+      percentUsed,
+      itemCount,
+      maxItems: MAX_ITEMS,
+      isApproachingLimit: percentUsed >= QUOTA_WARNING_THRESHOLD * 100,
+      isOverLimit: bytesInUse >= QUOTA_BYTES || itemCount >= MAX_ITEMS,
+    };
+  }
+
+  /**
+   * Check if adding data would exceed quota limits
+   */
+  async canAddData(estimatedBytes: number): Promise<{ canAdd: boolean; reason?: string }> {
+    const quotaInfo = await this.getQuotaInfo();
+
+    if (quotaInfo.bytesInUse + estimatedBytes > QUOTA_BYTES) {
+      return {
+        canAdd: false,
+        reason: `Adding this data would exceed storage quota (${quotaInfo.bytesInUse + estimatedBytes}/${QUOTA_BYTES} bytes)`,
+      };
+    }
+
+    if (quotaInfo.itemCount >= MAX_ITEMS) {
+      return {
+        canAdd: false,
+        reason: `Maximum number of storage items reached (${MAX_ITEMS})`,
+      };
+    }
+
+    return { canAdd: true };
   }
 
   /**

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { OptionsApp } from './options-app';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import '../styles/globals.css';
 
 function App() {
@@ -33,7 +34,9 @@ const root = document.getElementById('root');
 if (root) {
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 }

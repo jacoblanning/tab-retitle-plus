@@ -100,13 +100,12 @@ Or simply uninstall the extension to remove all data.
 ## Open Source
 
 Tab ReTitle+ is open source. You can review the complete source code to verify these privacy practices:
-- GitHub: [Your GitHub URL here]
+- GitHub: https://github.com/jacoblanning/tab-retitle-plus
 
 ## Contact
 
-If you have questions about this privacy policy, please:
-- Open an issue on GitHub: [Your GitHub URL here]
-- Email: [Your email here]
+If you have questions about this privacy policy, please open an issue on GitHub:
+- https://github.com/jacoblanning/tab-retitle-plus/issues
 
 ---
 

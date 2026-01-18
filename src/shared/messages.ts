@@ -7,6 +7,7 @@ export type MessageType =
   | 'SAVE_TITLE'
   | 'DELETE_TITLE'
   | 'GET_SAVED_TITLES'
+  | 'GET_QUOTA_INFO'
   | 'TITLE_UPDATED';
 
 // Message interface

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:prod": "NODE_ENV=production npm run build",
     "type-check": "tsc --noEmit",
     "package": "bash scripts/package-for-release.sh"
   },

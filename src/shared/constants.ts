@@ -25,3 +25,7 @@ export const PRIORITY = {
 
 // Context menu IDs
 export const CONTEXT_MENU_ID = 'retitle-set-title';
+
+// Title validation
+export const MAX_TITLE_LENGTH = 500; // Maximum length for custom titles
+export const MIN_TITLE_LENGTH = 1;   // Minimum length for custom titles
