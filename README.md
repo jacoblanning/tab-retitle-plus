@@ -18,6 +18,11 @@ A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/e
   - Exact URL: Applies to that specific URL
   - Domain-wide: Applies to all pages on the same domain
 
+- **Incognito Support:**
+  - Works in incognito windows once you enable "Allow in Incognito" on `chrome://extensions`
+  - All storage types (including persistent rules) are supported in incognito
+  - Note: rules are saved via Chrome Sync storage, which is shared with normal windows — titles you create in incognito persist after the window closes (see [Privacy Policy](./PRIVACY.md))
+
 - **Modern Tech Stack:**
   - React 18 for modern UI development
   - Manifest V3 (required for Chrome Web Store)
@@ -108,6 +113,11 @@ tab-retitle-plus/
    - Click "Load unpacked"
    - Select the `dist/` folder
 
+4. **(Optional) Enable in Incognito:**
+   - On `chrome://extensions/`, open the extension's "Details" page
+   - Turn on "Allow in Incognito"
+   - This is required for the extension to run in incognito windows — without it Chrome blocks the extension there entirely
+
 ## Development
 
 ### Available Scripts
@@ -184,6 +194,12 @@ npx playwright test tests/e2e/popup.spec.ts
 **Domain-wide Title:**
 1. Set title with "Domain-wide" option
 2. Navigate to different pages on same domain → all should show custom title
+
+**Incognito:**
+1. Enable "Allow in Incognito" for the extension (see Installation step 4)
+2. Open an incognito window and navigate to any webpage
+3. Set a title using any storage type → title should change
+4. Confirm persistent rules (URL/domain) created in a normal window also apply in incognito
 
 #### Priority System Testing
 
@@ -321,6 +337,11 @@ Primary color: `hsl(217.2 91.2% 59.8%)` (blue)
 - Check service worker console for errors
 - Verify storage type selection
 - Check `chrome.storage.sync` quota (limited to 8KB per item)
+
+### Extension not working in incognito
+
+- Open the extension's "Details" page on `chrome://extensions/` and enable "Allow in Incognito" — Chrome blocks the extension in incognito windows until this is turned on
+- After enabling, reopen the incognito window (the setting doesn't apply to already-open windows)
 
 ### Service worker not waking up
 

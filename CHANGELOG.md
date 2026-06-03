@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-06-03
+
+### Fixed
+- Extension now works in incognito windows when "Allow in Incognito" is enabled. Previously, custom titles were never applied to incognito tabs and persistent titles could not be saved there, regardless of the Chrome setting. All storage types are now supported in incognito. Note that rules saved in incognito persist via Chrome Sync storage, which is shared with normal windows (see [Privacy Policy](./PRIVACY.md)).
+
 ## [3.0.0] - 2026-01-11
 
 ### Added

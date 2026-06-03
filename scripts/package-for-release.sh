@@ -49,7 +49,7 @@ echo "📦 Creating ${ZIPNAME}..."
 # Check if zip command exists
 if command -v zip &> /dev/null; then
     cd dist/
-    zip -r "../${ZIPNAME}" . -x "*.DS_Store" -x "__MACOSX/*"
+    zip -r "../${ZIPNAME}" . -x "*.DS_Store" -x "__MACOSX/*" -x "*.md"
     cd ..
 elif command -v python3 &> /dev/null; then
     echo "   Using Python to create ZIP (zip command not found)..."
@@ -64,7 +64,7 @@ dist_dir = Path("dist")
 
 with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
     for file_path in dist_dir.rglob('*'):
-        if file_path.is_file() and not file_path.name.startswith('.'):
+        if file_path.is_file() and not file_path.name.startswith('.') and file_path.suffix != '.md':
             arcname = file_path.relative_to(dist_dir)
             zipf.write(file_path, arcname)
 print(f"Created {zipname}")

@@ -36,6 +36,12 @@ Tab ReTitle+ stores data **only on your device** using Chrome's built-in `chrome
 - Delete individual rules through the Options page
 - Or clear extension data: Chrome Settings → Privacy → Site Settings → View permissions → Tab ReTitle+
 
+### Incognito Windows
+
+If you enable "Allow in Incognito" for Tab ReTitle+, the extension works in incognito windows and supports all storage types, including persistent rules.
+
+Please note: title rules are stored in Chrome Sync storage, which is **shared** between incognito and normal windows. This means any persistent rule (tab, URL, or domain) you create while in incognito remains saved after the incognito window is closed and may sync to your other signed-in Chrome browsers. If you do not want a title change to be retained, use the **One-time** storage type, which is never written to storage.
+
 ## Permissions Explained
 
 Tab ReTitle+ requests the following permissions:
