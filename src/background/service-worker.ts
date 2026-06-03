@@ -103,12 +103,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     return;
   }
 
-  // Skip incognito tabs - don't apply persistent rules for privacy
-  if (tab.incognito) {
-    debugLog('Skipping incognito tab - persistent titles not applied');
-    return;
-  }
-
   const currentTitle = changeInfo.title;
   const cachedTitle = titleCache.get(tabId);
 
@@ -250,17 +244,6 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
         };
       }
 
-      // Check if tab is in incognito mode
-      let isIncognito = false;
-      if (tabId) {
-        try {
-          const tabInfo = await chrome.tabs.get(tabId);
-          isIncognito = tabInfo.incognito || false;
-        } catch (error) {
-          debugLog('Error checking incognito status:', error);
-        }
-      }
-
       // For one-time titles, just update the tab directly without saving to storage
       if (storageType === 'once' && tabId) {
         // Process template before applying
@@ -287,15 +270,6 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
             throw scriptError;
           }
         }
-      }
-
-      // Don't persist titles for incognito tabs (except one-time titles which are handled above)
-      if (isIncognito) {
-        debugLog('Skipping storage for incognito tab');
-        return {
-          success: false,
-          error: 'Cannot save persistent titles in incognito mode. Use "One-time" storage type instead.'
-        };
       }
 
       // For persistent storage types, save to storage
