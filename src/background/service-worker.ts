@@ -1,6 +1,11 @@
 import { StorageManager } from './storage-manager';
 import type { Message, SaveTitlePayload, DeleteTitlePayload } from '@shared/messages';
-import { CONTEXT_MENU_ID } from '@shared/constants';
+import {
+  CONTEXT_MENU_ID,
+  TITLE_FIGHT_MAX_REASSERTS,
+  TITLE_FIGHT_WINDOW_MS,
+  TITLE_FIGHT_COOLDOWN_MS,
+} from '@shared/constants';
 import { getDomain, debugLog, processTitleTemplate, isCustomizableUrl, validateTitleLength } from '@shared/utils';
 import { createMessage } from '@shared/messages';
 import type { UpdateTitlePayload } from '@shared/messages';
@@ -9,41 +14,149 @@ import type { UpdateTitlePayload } from '@shared/messages';
 // Maps tabId to the custom title we just set
 const titleCache = new Map<number, string>();
 
+// Per-tab backoff for automatic title reapplication. Pages that rewrite their
+// title on a timer (e.g. Intercom's unread-message flash) fire tabs.onUpdated
+// on every change; without a cap we would re-send UPDATE_TITLE forever and
+// keep re-arming the content script's observer against a page that fights back.
+const reapplyBackoff = new Map<number, { times: number[]; cooldownUntil: number }>();
+
+/**
+ * Returns whether an automatic reapply for this tab is within budget.
+ * Explicit user actions (SAVE_TITLE) bypass this check.
+ */
+function shouldReapplyTitle(tabId: number): boolean {
+  const now = Date.now();
+  let entry = reapplyBackoff.get(tabId);
+  if (!entry) {
+    entry = { times: [], cooldownUntil: 0 };
+    reapplyBackoff.set(tabId, entry);
+  }
+
+  if (now < entry.cooldownUntil) {
+    return false;
+  }
+
+  entry.times = entry.times.filter((t) => now - t < TITLE_FIGHT_WINDOW_MS);
+  if (entry.times.length >= TITLE_FIGHT_MAX_REASSERTS) {
+    entry.times = [];
+    entry.cooldownUntil = now + TITLE_FIGHT_COOLDOWN_MS;
+    debugLog('Tab is fighting for its title; pausing reapplies:', { tabId });
+    return false;
+  }
+
+  entry.times.push(now);
+  return true;
+}
+
 /**
  * Injects title update logic with MutationObserver directly into the page.
  * This is used as a fallback when the content script isn't ready.
- * MV3-safe: No setTimeout, all logic executes in the injected context.
+ *
+ * NOTE: chrome.scripting.executeScript serializes this function, so it cannot
+ * reference imports or outer variables. The loop-guard values below mirror the
+ * TITLE_* constants in shared/constants.ts — keep them in sync. State lives on
+ * a window property so repeated injections reuse one observer instead of
+ * stacking a new one per injection.
  */
 function injectTitleWithObserver(newTitle: string): void {
-  // Store the custom title
-  let currentCustomTitle: string | null = newTitle;
-  let mutationObserver: MutationObserver | null = null;
+  const DEBOUNCE_MS = 500;
+  const MAX_REASSERTS = 5;
+  const WINDOW_MS = 10000;
+  const COOLDOWN_MS = 30000;
+  const STATE_KEY = '__tabRetitlePlusState';
 
-  // Set the title
-  document.title = newTitle;
-
-  // Set up observer to handle dynamic title changes by the page
-  mutationObserver = new MutationObserver(() => {
-    if (currentCustomTitle && document.title !== currentCustomTitle) {
-      document.title = currentCustomTitle;
-    }
+  const w = window as unknown as Record<string, any>;
+  const state = w[STATE_KEY] ?? (w[STATE_KEY] = {
+    customTitle: null as string | null,
+    observer: null as MutationObserver | null,
+    reassertTimer: null as number | null,
+    cooldownTimer: null as number | null,
+    reassertTimes: [] as number[],
+    cleanupInstalled: false,
   });
 
-  const titleElement = document.querySelector('title');
-  if (titleElement) {
-    mutationObserver.observe(titleElement, {
+  if (state.customTitle !== newTitle) {
+    // A genuinely new title gets a fresh fight budget
+    state.reassertTimes = [];
+    if (state.cooldownTimer !== null) {
+      clearTimeout(state.cooldownTimer);
+      state.cooldownTimer = null;
+    }
+  }
+
+  state.customTitle = newTitle;
+  document.title = newTitle;
+
+  const observe = (): void => {
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+    const titleElement = document.querySelector('title');
+    if (!titleElement) return;
+
+    // Never write document.title synchronously in the callback: pages that
+    // reassert their own title would turn that into an unbounded loop.
+    state.observer = new MutationObserver(() => {
+      if (!state.customTitle || document.title === state.customTitle) return;
+      if (state.reassertTimer !== null || state.cooldownTimer !== null) return;
+
+      const now = Date.now();
+      state.reassertTimes = state.reassertTimes.filter((t: number) => now - t < WINDOW_MS);
+
+      if (state.reassertTimes.length >= MAX_REASSERTS) {
+        // Page keeps overwriting us: stand down for a cooldown, then retry
+        if (state.observer) {
+          state.observer.disconnect();
+          state.observer = null;
+        }
+        state.reassertTimes = [];
+        state.cooldownTimer = window.setTimeout(() => {
+          state.cooldownTimer = null;
+          if (state.customTitle) {
+            document.title = state.customTitle;
+            observe();
+          }
+        }, COOLDOWN_MS);
+        return;
+      }
+
+      state.reassertTimes.push(now);
+      state.reassertTimer = window.setTimeout(() => {
+        state.reassertTimer = null;
+        if (state.customTitle && document.title !== state.customTitle) {
+          document.title = state.customTitle;
+        }
+      }, DEBOUNCE_MS);
+    });
+
+    state.observer.observe(titleElement, {
       childList: true,
       characterData: true,
       subtree: true,
     });
-  }
+  };
 
-  // Clean up on page unload
-  window.addEventListener('beforeunload', () => {
-    if (mutationObserver) {
-      mutationObserver.disconnect();
-    }
-  });
+  observe();
+
+  // Clean up on page unload (install once, even across repeated injections)
+  if (!state.cleanupInstalled) {
+    state.cleanupInstalled = true;
+    window.addEventListener('beforeunload', () => {
+      if (state.observer) {
+        state.observer.disconnect();
+        state.observer = null;
+      }
+      if (state.reassertTimer !== null) {
+        clearTimeout(state.reassertTimer);
+        state.reassertTimer = null;
+      }
+      if (state.cooldownTimer !== null) {
+        clearTimeout(state.cooldownTimer);
+        state.cooldownTimer = null;
+      }
+    });
+  }
 }
 
 /**
@@ -91,6 +204,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // Log all tab updates for debugging
   debugLog('Tab update event:', { tabId, changeInfo, url: tab.url });
 
+  // A new navigation gets a fresh reapply budget
+  if (changeInfo.status === 'loading') {
+    reapplyBackoff.delete(tabId);
+  }
+
   // Only process when title changes and we have a valid URL
   if (!changeInfo.title || !tab.url) {
     debugLog('Skipping - no title or URL in changeInfo');
@@ -128,6 +246,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     debugLog('Found match in storage:', match);
 
     if (match.title !== currentTitle) {
+      // Rate-limit automatic reapplies so a page that rewrites its title on a
+      // timer can't drive an endless reapply loop through this listener
+      if (!shouldReapplyTitle(tabId)) {
+        debugLog('Skipping reapply (backoff active):', { tabId });
+        return;
+      }
+
       // Cache the custom title we're about to set
       titleCache.set(tabId, match.title);
 
@@ -174,6 +299,7 @@ chrome.tabs.onRemoved.addListener(async (tabId, _removeInfo) => {
 
   // Remove from cache
   titleCache.delete(tabId);
+  reapplyBackoff.delete(tabId);
 
   // Clean up tab-specific storage
   await StorageManager.getInstance().cleanupTab(tabId);
@@ -224,6 +350,12 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
       const { title, storageType, tabId, url, originalTitle } = payload;
 
       debugLog('Saving title:', payload);
+
+      // An explicit user action always applies immediately, with a fresh
+      // reapply budget for the tab
+      if (tabId) {
+        reapplyBackoff.delete(tabId);
+      }
 
       // Validate title length
       const titleValidation = validateTitleLength(title);
