@@ -10,9 +10,34 @@ import { getDomain, debugLog, processTitleTemplate, isCustomizableUrl, validateT
 import { createMessage } from '@shared/messages';
 import type { UpdateTitlePayload } from '@shared/messages';
 
-// In-memory cache for loop prevention
-// Maps tabId to the custom title we just set
-const titleCache = new Map<number, string>();
+// In-memory cache for loop prevention: the last few titles we set per tab.
+// A single-value cache is not enough — the content script may reassert an
+// older custom title while a newer one is already in flight, and mistaking
+// that echo for a page-authored title feeds our own output back into
+// {original} template processing (producing e.g. "[Beta] [Beta] Page").
+const MAX_RECENT_OUTPUTS = 8;
+const recentTitleOutputs = new Map<number, string[]>();
+
+function recordTitleOutput(tabId: number, title: string): void {
+  const outputs = recentTitleOutputs.get(tabId) ?? [];
+  const filtered = outputs.filter((t) => t !== title);
+  filtered.push(title);
+  if (filtered.length > MAX_RECENT_OUTPUTS) {
+    filtered.shift();
+  }
+  recentTitleOutputs.set(tabId, filtered);
+}
+
+function isRecentTitleOutput(tabId: number, title: string): boolean {
+  return recentTitleOutputs.get(tabId)?.includes(title) ?? false;
+}
+
+function removeTitleOutput(tabId: number, title: string): void {
+  const outputs = recentTitleOutputs.get(tabId);
+  if (outputs) {
+    recentTitleOutputs.set(tabId, outputs.filter((t) => t !== title));
+  }
+}
 
 // Per-tab backoff for automatic title reapplication. Pages that rewrite their
 // title on a timer (e.g. Intercom's unread-message flash) fire tabs.onUpdated
@@ -222,19 +247,18 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 
   const currentTitle = changeInfo.title;
-  const cachedTitle = titleCache.get(tabId);
 
   debugLog('Title change detected:', {
     tabId,
     currentTitle,
-    cachedTitle,
     url: tab.url,
-    cacheSize: titleCache.size
   });
 
-  // If this title matches what we just set, skip processing to prevent loops
-  if (cachedTitle === currentTitle) {
-    debugLog('Skipping title update (matches cache):', { tabId, title: currentTitle });
+  // If this title is one we recently set, it's an echo of our own write
+  // (possibly a stale one reasserted by the content script) — never process
+  // it, and in particular never feed it back into {original} templating
+  if (isRecentTitleOutput(tabId, currentTitle)) {
+    debugLog('Skipping title update (own recent output):', { tabId, title: currentTitle });
     return;
   }
 
@@ -253,8 +277,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         return;
       }
 
-      // Cache the custom title we're about to set
-      titleCache.set(tabId, match.title);
+      // Record the custom title we're about to set
+      recordTitleOutput(tabId, match.title);
 
       debugLog('Applying custom title:', { tabId, from: currentTitle, to: match.title });
 
@@ -278,8 +302,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
           debugLog('Successfully injected title with observer');
         } catch (scriptError) {
           console.error('Error injecting title:', scriptError);
-          // Remove from cache if injection failed
-          titleCache.delete(tabId);
+          // Title was never applied, so drop it from the output record
+          removeTitleOutput(tabId, match.title);
         }
       }
     } else {
@@ -298,7 +322,7 @@ chrome.tabs.onRemoved.addListener(async (tabId, _removeInfo) => {
   debugLog('Tab removed:', { tabId });
 
   // Remove from cache
-  titleCache.delete(tabId);
+  recentTitleOutputs.delete(tabId);
   reapplyBackoff.delete(tabId);
 
   // Clean up tab-specific storage
@@ -380,7 +404,7 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
       if (storageType === 'once' && tabId) {
         // Process template before applying
         const processedTitle = processTitleTemplate(title, originalTitle || '', url);
-        titleCache.set(tabId, processedTitle);
+        recordTitleOutput(tabId, processedTitle);
         try {
           await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
             title: processedTitle,
@@ -398,7 +422,7 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
             debugLog('Successfully injected title with observer');
             return { success: true };
           } catch (scriptError) {
-            titleCache.delete(tabId);
+            removeTitleOutput(tabId, processedTitle);
             throw scriptError;
           }
         }
@@ -412,7 +436,7 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
       if (tabId) {
         // Process template before applying
         const processedTitle = processTitleTemplate(title, originalTitle || '', url);
-        titleCache.set(tabId, processedTitle);
+        recordTitleOutput(tabId, processedTitle);
         try {
           await chrome.tabs.sendMessage(tabId, createMessage('UPDATE_TITLE', {
             title: processedTitle,
