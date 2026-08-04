@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.2] - 2026-08-03
 
 ### Fixed
+- Stale rule data could be served for up to 5 seconds after extension storage changed outside the service worker's own writes (e.g. Chrome Sync pushing rule changes from another device). The storage cache is now invalidated on any `chrome.storage.onChanged` event for the sync area.
 - Duplicated template text (e.g. "[Beta] [Beta] Page") when a rule uses `{original}` on a page that changes its own title. The service worker only remembered the single most recent title it set, so a stale custom title reasserted by the content script could be mistaken for a page-authored title and fed back into template processing. The worker now remembers the last several titles it produced per tab and ignores echoes of its own writes entirely.
 - Browser-wide freeze (AppHangB1) on pages that repeatedly rewrite their own title, such as Intercom's chat messenger flashing "1 new message" for an unread conversation. The extension previously reasserted the custom title synchronously inside its MutationObserver callback with no limit, creating an unbounded write loop against the page. Title reassertion is now debounced (500ms), capped at 5 reasserts per 10 seconds, and backs off for 30 seconds when a page keeps fighting, then retries. The service worker applies the same per-tab backoff to automatic reapplies, and the fallback injection no longer stacks a new MutationObserver on every injection.
 
