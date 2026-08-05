@@ -46,14 +46,25 @@ echo ""
 ZIPNAME="tab-retitle-plus-v${VERSION}.zip"
 echo "📦 Creating ${ZIPNAME}..."
 
+# Find a working Python for the fallback. On Windows, "python3" can resolve
+# to the Microsoft Store stub which silently does nothing, so verify the
+# interpreter actually runs before trusting it.
+PYTHON_BIN=""
+for candidate in python3 python; do
+    if command -v "$candidate" &> /dev/null && "$candidate" -c "import sys" &> /dev/null; then
+        PYTHON_BIN="$candidate"
+        break
+    fi
+done
+
 # Check if zip command exists
 if command -v zip &> /dev/null; then
     cd dist/
     zip -r "../${ZIPNAME}" . -x "*.DS_Store" -x "__MACOSX/*" -x "*.md"
     cd ..
-elif command -v python3 &> /dev/null; then
+elif [ -n "$PYTHON_BIN" ]; then
     echo "   Using Python to create ZIP (zip command not found)..."
-    python3 << 'PYTHON_SCRIPT'
+    "$PYTHON_BIN" << 'PYTHON_SCRIPT'
 import zipfile
 import os
 from pathlib import Path
@@ -71,7 +82,7 @@ print(f"Created {zipname}")
 PYTHON_SCRIPT
 else
     echo ""
-    echo "⚠️  Neither 'zip' nor 'python3' command found!"
+    echo "⚠️  Neither 'zip' nor a working Python interpreter found!"
     echo ""
     echo "📝 Manual packaging instructions:"
     echo "   1. Navigate to the dist/ folder"
