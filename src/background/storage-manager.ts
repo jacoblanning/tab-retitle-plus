@@ -14,7 +14,17 @@ export class StorageManager {
   private cacheTimestamp: number = 0;
   private readonly CACHE_TTL = 5000; // Cache time-to-live: 5 seconds
 
-  private constructor() {}
+  private constructor() {
+    // setData() invalidates the cache for writes made through this instance,
+    // but storage can also change externally — Chrome Sync pushing updates
+    // from another device, or direct chrome.storage writes (e.g. in tests).
+    // Invalidate on any sync-area change so reads never serve stale data.
+    chrome.storage.onChanged.addListener((_changes, areaName) => {
+      if (areaName === 'sync') {
+        this.invalidateCache();
+      }
+    });
+  }
 
   static getInstance(): StorageManager {
     if (!this.instance) {

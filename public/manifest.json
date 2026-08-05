@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab ReTitle+",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Rename browser tab titles with powerful persistence options",
 
   "permissions": [
