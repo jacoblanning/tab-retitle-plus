@@ -1,126 +1,86 @@
 # Privacy Policy for Tab ReTitle+
 
-**Last Updated**: January 13, 2026
+**Last updated:** August 23, 2026
 
-## Overview
+Tab ReTitle+ renames Chrome tab titles according to rules you create. The
+extension does not send your data to the developer, sell it, use it for
+advertising, or include analytics or tracking.
 
-Tab ReTitle+ is committed to protecting your privacy. This extension does not collect, transmit, or share any personal data.
+## Data the extension handles
 
-## Data Collection
+To rename a tab and match saved rules, Tab ReTitle+ may handle:
 
-**We do NOT collect:**
-- Personal information
-- Browsing history
-- Analytics or usage statistics
-- Crash reports
-- Any form of telemetry
+- The current tab's URL, domain, page title, and Chrome-assigned tab identifier
+- The custom title or title template you enter
+- Exact-URL, domain-wide, and tab-specific rules you choose to save
+- Extension settings, such as bookmark-title fallback and context-menu options
+- A matching bookmark title when bookmark-title fallback is enabled
 
-## Data Storage
+The extension does not read page body content, form entries, passwords,
+cookies, personal communications, financial information, health information,
+or precise location.
 
-### Local Storage Only
+## Storage and Chrome Sync
 
-Tab ReTitle+ stores data **only on your device** using Chrome's built-in `chrome.storage.sync` API:
+- **One-time titles** are applied to the current tab and are not written to
+  extension storage.
+- **Persistent rules** are stored with `chrome.storage.sync`. A rule can contain
+  a custom title or template, an original page title, and either a Chrome tab
+  identifier, exact URL, or domain, depending on the rule type you select.
+- **Settings** are also stored with `chrome.storage.sync`.
 
-**What is stored:**
-- Custom tab titles you create
-- Title persistence rules (URL, domain, or tab-specific)
-- Extension settings (bookmark integration, context menu, debug mode)
+Chrome may sync this data between browsers signed in to the same Google account
+when Chrome Sync is enabled. This sync is provided by Chrome; Tab ReTitle+ has
+no developer-controlled server and the developer cannot access your synced
+extension data.
 
-**Where it's stored:**
-- Locally on your device
-- Automatically synced across your Chrome browsers via Chrome Sync (if you're signed into Chrome)
-- No external servers
-- No third-party services
+## Incognito windows
 
-**How to clear data:**
-- Delete individual rules through the Options page
-- Or clear extension data: Chrome Settings → Privacy → Site Settings → View permissions → Tab ReTitle+
+Chrome blocks the extension in incognito unless you explicitly enable **Allow
+in Incognito** on the extension's Chrome settings page.
 
-### Incognito Windows
+If enabled, one-time titles remain one-time. Persistent rules created in an
+incognito window use the same `chrome.storage.sync` area as normal windows.
+They can remain after the incognito window closes and can apply in normal
+windows or sync to another signed-in Chrome browser.
 
-If you enable "Allow in Incognito" for Tab ReTitle+, the extension works in incognito windows and supports all storage types, including persistent rules.
+## Permissions
 
-Please note: title rules are stored in Chrome Sync storage, which is **shared** between incognito and normal windows. This means any persistent rule (tab, URL, or domain) you create while in incognito remains saved after the incognito window is closed and may sync to your other signed-in Chrome browsers. If you do not want a title change to be retained, use the **One-time** storage type, which is never written to storage.
+- **`storage`** stores saved title rules and settings with Chrome Sync.
+- **`tabs`** reads the active tab's URL and title, identifies the tab, and
+  responds when tabs navigate, update, or close.
+- **`scripting`** provides a fallback way to apply a chosen title to a page.
+- **`contextMenus`** adds an optional right-click shortcut for opening the title
+  editor.
+- **`bookmarks`** reads a matching bookmark title only when bookmark-title
+  fallback is enabled. Tab ReTitle+ does not create, edit, or delete bookmarks.
+- **`<all_urls>`** lets the extension apply a custom title on standard web pages
+  across the sites where you choose to use it. It is not used to read page body
+  content.
 
-## Permissions Explained
+## Network connections and third parties
 
-Tab ReTitle+ requests the following permissions:
+Tab ReTitle+ does not make requests to a developer server, use third-party APIs,
+include ads, or transmit analytics. Chrome Sync is the only browser-provided
+sync mechanism used for persistent rules and settings.
 
-### Required Permissions
+## Your controls
 
-1. **`storage`**
-   - **Why**: Save your custom title rules locally
-   - **Data**: Title templates, persistence settings, options
+You can review and delete persistent rules from the Tab ReTitle+ Options page.
+One-time titles are not stored. Uninstalling the extension removes its local
+extension data and access; Chrome controls any retention associated with your
+Google account's Chrome Sync settings.
 
-2. **`tabs`**
-   - **Why**: Read tab information (URL, current title) to apply custom titles
-   - **Data**: Current tab URL and title (not stored or transmitted)
+## Children, changes, and contact
 
-3. **`scripting`**
-   - **Why**: Update page titles in your browser tabs
-   - **Data**: None - only modifies the displayed tab title
+Tab ReTitle+ does not knowingly collect personal information from anyone,
+including children. Material changes to this policy will be reflected here
+with a new update date.
 
-4. **`contextMenus`**
-   - **Why**: Add "Set Custom Title" option to right-click menu (optional feature)
-   - **Data**: None
+Questions or privacy concerns can be filed at:
 
-5. **`bookmarks`**
-   - **Why**: Optional feature to use bookmark titles
-   - **Data**: Read-only access to bookmark titles (if enabled in settings)
+https://github.com/jacoblanning/tab-retitle-plus/issues
 
-6. **`<all_urls>` (Host Permissions)**
-   - **Why**: Apply custom titles to any website you visit
-   - **Data**: No data collected - only needed to modify tab titles
+The source code is available at:
 
-### No Internet Access
-
-Tab ReTitle+ **does not**:
-- Connect to any external servers
-- Send any data over the internet
-- Use any third-party APIs or services
-- Include analytics or tracking code
-- Contain ads or monetization
-
-## Third-Party Services
-
-**None.** This extension does not use any third-party services, APIs, or integrations.
-
-## Children's Privacy
-
-Tab ReTitle+ does not collect any data from anyone, including children under 13.
-
-## Changes to Privacy Policy
-
-If we make changes to this privacy policy, we will update the "Last Updated" date above. Continued use of the extension after changes constitutes acceptance of the updated policy.
-
-## Data Deletion
-
-To delete all data:
-1. Open Chrome Settings
-2. Go to Privacy and Security → Site Settings
-3. Click "View permissions and data stored across sites"
-4. Find "Tab ReTitle+" and click "Remove"
-
-Or simply uninstall the extension to remove all data.
-
-## Open Source
-
-Tab ReTitle+ is open source. You can review the complete source code to verify these privacy practices:
-- GitHub: https://github.com/jacoblanning/tab-retitle-plus
-
-## Contact
-
-If you have questions about this privacy policy, please open an issue on GitHub:
-- https://github.com/jacoblanning/tab-retitle-plus/issues
-
----
-
-## Summary
-
-✅ **No data collection**
-✅ **No tracking or analytics**
-✅ **No external servers**
-✅ **All data stored locally**
-✅ **Open source code**
-
-Your privacy is our priority. Tab ReTitle+ is designed to work entirely on your device without any external communication.
+https://github.com/jacoblanning/tab-retitle-plus
