@@ -271,7 +271,7 @@ export function OptionsApp() {
 
         {/* Footer */}
         <footer className="mt-8 text-center text-xs text-muted-foreground">
-          <p>Tab ReTitle+ v3.0.2</p>
+          <p>Tab ReTitle+ v3.0.3</p>
         </footer>
       </div>
     </div>
