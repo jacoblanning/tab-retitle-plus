@@ -1,0 +1,14 @@
+:root {
+  --family-icon-master-grid: 32px;
+  --family-icon-interface-grid: 24px;
+  --family-icon-toolbar-grid: 16px;
+  --family-icon-master-stroke: 2.25px;
+  --family-icon-toolbar-stroke: 1.25px;
+  --family-radius-control: 8px;
+  --family-radius-card: 12px;
+  --family-space-unit: 4px;
+  --family-type-heading: 18px;
+  --family-type-body: 14px;
+  --family-type-secondary: 13px;
+  --family-type-label: 12px;
+}

@@ -1,0 +1,28 @@
+:root {
+  --family-ink: #172033;
+  --family-muted: #667085;
+  --family-border: #d9dee8;
+  --family-canvas: #f7f8fa;
+  --family-surface: #ffffff;
+  --family-surface-hover: #f1f3f7;
+  --family-on-color: #ffffff;
+  --retitle-signal: #635bff;
+  --retitle-control: #635bff;
+  --retitle-soft: #eeedff;
+  --tab-buoy-signal: #f45a2a;
+  --tab-buoy-control: #c7461f;
+  --tab-buoy-soft: #fff0eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --family-ink: #f1f4f9;
+    --family-muted: #9aa5b5;
+    --family-border: #2b3443;
+    --family-canvas: #11151d;
+    --family-surface: #1a202c;
+    --family-surface-hover: #222a38;
+    --retitle-soft: #292750;
+    --tab-buoy-soft: #3a241e;
+  }
+}

@@ -4,9 +4,13 @@
   "description": "Chrome extension for renaming browser tab titles - inspired by Tab ReTitle for Firefox",
   "type": "module",
   "scripts": {
+    "assets": "node scripts/build-assets.mjs",
+    "assets:check": "node scripts/build-assets.mjs --check",
     "dev": "vite",
+    "prebuild": "npm run assets",
     "build": "tsc && vite build",
     "build:prod": "NODE_ENV=production npm run build",
+    "check": "npm run type-check && npm run assets:check",
     "type-check": "tsc --noEmit",
     "package": "bash scripts/package-for-release.sh"
   },
@@ -24,6 +28,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
+    "sharp": "^0.35.3",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"

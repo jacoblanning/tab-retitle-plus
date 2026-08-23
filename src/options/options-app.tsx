@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Settings } from 'lucide-react';
 import { createMessage } from '@shared/messages';
 import type { GetSavedTitlesResponse } from '@shared/messages';
 import type { Settings as SettingsType } from '@shared/types';
@@ -121,13 +120,13 @@ export function OptionsApp() {
     if (titles.length === 0) return null;
 
     return (
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-foreground mb-3">{title}</h3>
+      <div className="mb-6 last:mb-0">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground">{title}</h3>
         <div className="space-y-2">
           {titles.map((item) => (
             <div
               key={`${item.type}-${item.key}`}
-              className="flex items-center justify-between p-3 bg-muted rounded-md border border-border"
+              className="flex items-center justify-between rounded-xl border border-border bg-muted p-3"
             >
               <div className="flex-1 min-w-0 mr-4">
                 <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
@@ -135,7 +134,7 @@ export function OptionsApp() {
               </div>
               <button
                 onClick={() => handleDeleteTitle(item.type, item.key)}
-                className="px-3 py-1.5 text-sm text-destructive-foreground bg-destructive hover:bg-destructive/90 rounded-md transition-colors"
+                className="destructive-text rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-background"
               >
                 Delete
               </button>
@@ -150,20 +149,23 @@ export function OptionsApp() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="mx-auto max-w-3xl px-6 py-10">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Settings className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Tab ReTitle+ Settings</h1>
+        <header className="mb-8">
+          <div className="mb-2 flex items-center gap-3">
+            <img className="h-10 w-10" src="./icons/icon48.png" alt="" />
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Tab ReTitle+</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Settings</p>
+            </div>
           </div>
-          <p className="text-muted-foreground">Manage your custom tab titles and extension settings</p>
-        </div>
+          <p className="text-sm text-muted-foreground">Manage saved title rules, shortcuts, and extension behavior.</p>
+        </header>
 
         {/* Saved Titles Section */}
-        <section className="mb-8 bg-card p-6 rounded-lg shadow-lg border border-border">
-          <h2 className="text-2xl font-semibold mb-4 text-foreground">Saved Titles</h2>
-          <p className="text-sm text-muted-foreground mb-6">
+        <section className="settings-card mb-6">
+          <h2 className="mb-2 text-lg font-semibold text-foreground">Saved titles</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
             {totalTitles > 0
               ? `You have ${totalTitles} saved title ${totalTitles === 1 ? 'rule' : 'rules'}`
               : 'No saved titles yet. Use the extension popup to create custom titles!'}
@@ -181,9 +183,9 @@ export function OptionsApp() {
         </section>
 
         {/* Keyboard Shortcut Section */}
-        <section className="mb-8 bg-card p-6 rounded-lg shadow-lg border border-border">
-          <h2 className="text-2xl font-semibold mb-4 text-foreground">Keyboard Shortcut</h2>
-          <div className="bg-primary/10 border border-primary/30 rounded-md p-4 mb-4">
+        <section className="settings-card mb-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Keyboard shortcut</h2>
+          <div className="rounded-xl border border-primary/20 bg-accent p-4">
             <p className="text-sm text-foreground mb-2">
               <span className="font-semibold">Current shortcut:</span>{' '}
               {shortcut === null ? (
@@ -191,7 +193,7 @@ export function OptionsApp() {
               ) : shortcut === '' ? (
                 <span className="text-muted-foreground">Not set</span>
               ) : (
-                <kbd className="px-2 py-1 bg-muted border border-border rounded text-sm font-mono text-foreground">
+                <kbd className="rounded-lg border border-border bg-card px-2 py-1 font-mono text-sm text-foreground">
                   {shortcut}
                 </kbd>
               )}
@@ -201,13 +203,13 @@ export function OptionsApp() {
             </p>
             <button
               onClick={handleCustomizeShortcut}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+              className="primary-button"
               id="customize-shortcut-btn"
             >
               Customize Keyboard Shortcut
             </button>
             <p className="text-xs text-muted-foreground mt-2">
-              Default: <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-xs font-mono">Ctrl+Shift+E</kbd> (Mac: <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-xs font-mono">Cmd+Shift+E</kbd>)
+              Default: <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-xs">Ctrl+Shift+E</kbd> (Mac: <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-xs">Cmd+Shift+E</kbd>)
               {shortcut === '' && ' - No shortcut currently set. Click above to configure one.'}
               {shortcut && shortcut !== '' && shortcut !== 'Ctrl+Shift+E' && shortcut !== 'Command+Shift+E' && ' - You have customized this shortcut.'}
             </p>
@@ -215,18 +217,18 @@ export function OptionsApp() {
         </section>
 
         {/* General Settings Section */}
-        <section className="bg-card p-6 rounded-lg shadow-lg border border-border">
-          <h2 className="text-2xl font-semibold mb-4 text-foreground">General Settings</h2>
-          <div className="space-y-4">
-            <label className="flex items-center cursor-pointer group">
+        <section className="settings-card">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">General settings</h2>
+          <div className="space-y-1">
+            <label className="settings-row cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.enableBookmarkTitles}
                 onChange={(e) => handleSettingChange('enableBookmarkTitles', e.target.checked)}
-                className="mr-3 w-4 h-4 text-primary bg-background border-border rounded focus:ring-2 focus:ring-primary cursor-pointer"
+                className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary"
               />
               <div>
-                <span className="text-foreground group-hover:text-primary transition-colors">
+                <span className="text-sm font-medium text-foreground">
                   Enable bookmark titles
                 </span>
                 <p className="text-xs text-muted-foreground">
@@ -234,15 +236,15 @@ export function OptionsApp() {
                 </p>
               </div>
             </label>
-            <label className="flex items-center cursor-pointer group">
+            <label className="settings-row cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.enableContextMenu}
                 onChange={(e) => handleSettingChange('enableContextMenu', e.target.checked)}
-                className="mr-3 w-4 h-4 text-primary bg-background border-border rounded focus:ring-2 focus:ring-primary cursor-pointer"
+                className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary"
               />
               <div>
-                <span className="text-foreground group-hover:text-primary transition-colors">
+                <span className="text-sm font-medium text-foreground">
                   Enable context menu
                 </span>
                 <p className="text-xs text-muted-foreground">
@@ -250,15 +252,15 @@ export function OptionsApp() {
                 </p>
               </div>
             </label>
-            <label className="flex items-center cursor-pointer group">
+            <label className="settings-row cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.debugMode}
                 onChange={(e) => handleSettingChange('debugMode', e.target.checked)}
-                className="mr-3 w-4 h-4 text-primary bg-background border-border rounded focus:ring-2 focus:ring-primary cursor-pointer"
+                className="h-4 w-4 cursor-pointer rounded border-border bg-background text-primary accent-primary"
               />
               <div>
-                <span className="text-foreground group-hover:text-primary transition-colors">Debug mode</span>
+                <span className="text-sm font-medium text-foreground">Debug mode</span>
                 <p className="text-xs text-muted-foreground">
                   Enable detailed console logging for troubleshooting
                 </p>
@@ -268,8 +270,8 @@ export function OptionsApp() {
         </section>
 
         {/* Footer */}
-        <footer className="mt-8 text-center text-sm text-muted-foreground">
-          <p>Tab ReTitle+ v3.0.0</p>
+        <footer className="mt-8 text-center text-xs text-muted-foreground">
+          <p>Tab ReTitle+ v3.0.2</p>
         </footer>
       </div>
     </div>

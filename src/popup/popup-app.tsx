@@ -178,10 +178,10 @@ export function PopupApp() {
   };
 
   const getSaveButtonClass = () => {
-    const baseClass = 'flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors';
-    if (saveState === 'success') return `${baseClass} bg-green-600 text-white`;
-    if (saveState === 'error') return `${baseClass} bg-red-600 text-white`;
-    return `${baseClass} bg-primary text-primary-foreground hover:bg-primary/90`;
+    const baseClass = 'primary-button flex-1';
+    if (saveState === 'success') return `${baseClass} border-green-700 bg-green-700`;
+    if (saveState === 'error') return `${baseClass} border-destructive bg-destructive`;
+    return baseClass;
   };
 
   const getSaveButtonText = () => {
@@ -193,91 +193,91 @@ export function PopupApp() {
 
   if (tabLoading) {
     return (
-      <div className="w-[320px] p-4 bg-card">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="popup-shell">
+        <div className="product-header">
+          <div className="product-lockup">
+            <img className="product-mark" src="./icons/icon48.png" alt="" />
+            <div>
+              <h1 className="product-title">Tab ReTitle+</h1>
+              <p className="product-subtitle">Rename this tab, once or automatically</p>
+            </div>
+          </div>
+        </div>
+        <div className="popup-content">
+          <p className="text-sm text-muted-foreground">Loading current tab...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-[320px] bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-        <h1 className="text-base font-semibold text-foreground">Tab ReTitle+</h1>
-        <button
-          onClick={handleOpenOptions}
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Open settings"
-        >
-          <Settings className="h-4 w-4" />
+    <div className="popup-shell">
+      <header className="product-header">
+        <div className="product-lockup">
+          <img className="product-mark" src="./icons/icon48.png" alt="" />
+          <div className="min-w-0">
+            <h1 className="product-title">Tab ReTitle+</h1>
+            <p className="product-subtitle">Rename this tab, once or automatically</p>
+          </div>
+        </div>
+        <button onClick={handleOpenOptions} className="icon-button" aria-label="Open settings">
+          <Settings className="h-4 w-4" aria-hidden="true" />
         </button>
-      </div>
+      </header>
 
-      {/* Content */}
-      <div className="p-3">
-        {/* Custom Title Input */}
-        <div className="mb-3">
-          <label htmlFor="title-input" className="mb-1.5 block text-sm font-medium text-foreground">
-            Custom Title
-          </label>
+      <div className="popup-content">
+        <section>
+          <label htmlFor="title-input" className="field-label">Custom title</label>
           <input
             id="title-input"
             type="text"
             value={customTitle}
             onChange={(e) => setCustomTitle(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSave()}
-            className="w-full rounded-md border border-primary bg-background px-3 py-1.5 text-sm text-foreground outline-none ring-2 ring-primary/30 transition-all focus:ring-primary/50"
+            className="title-input"
             placeholder="Enter custom title..."
             autoFocus
           />
-        </div>
+        </section>
 
-        {/* Preview */}
-        <div id="preview-container" className="mb-3">
-          <span className="mb-1.5 block text-sm text-muted-foreground">Preview:</span>
-          <div id="title-preview" className="rounded-md bg-muted px-3 py-1.5 text-sm text-foreground">
+        <section id="preview-container">
+          <span className="field-label">Preview</span>
+          <div id="title-preview" className="preview-card truncate">
             {getPreviewText() || customTitle || 'No title set'}
           </div>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Use <code className="rounded bg-muted px-1 py-0.5 text-primary">{'{original}'}</code> or{' '}
-            <code className="rounded bg-muted px-1 py-0.5 text-primary">$0</code> to include the original title
+          <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">
+            Use <code className="rounded bg-accent px-1 py-0.5 text-accent-foreground">{'{original}'}</code> or{' '}
+            <code className="rounded bg-accent px-1 py-0.5 text-accent-foreground">$0</code> to include the original title.
           </p>
-        </div>
+        </section>
 
-        {/* Storage Type */}
-        <div className="mb-3">
-          <span className="mb-1.5 block text-sm font-medium text-foreground">Storage Type</span>
-          <div className="space-y-1">
-            {storageOptions.map((option) => (
-              <label
-                key={option.value}
-                className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1 transition-colors hover:bg-muted"
-              >
-                <div
-                  className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors ${
-                    storageType === option.value ? 'border-primary bg-primary' : 'border-muted-foreground'
-                  }`}
-                  onClick={() => setStorageType(option.value)}
-                >
-                  {storageType === option.value && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
-                </div>
-                <span className="text-sm text-foreground" onClick={() => setStorageType(option.value)}>
-                  {option.label} <span className="text-muted-foreground">({option.description})</span>
-                </span>
-                <input
-                  type="radio"
-                  name="storage-type"
-                  value={option.value}
-                  checked={storageType === option.value}
-                  onChange={(e) => setStorageType(e.target.value as StorageTypeValue)}
-                  className="sr-only"
-                />
-              </label>
-            ))}
+        <fieldset>
+          <legend className="field-label">Apply title to</legend>
+          <div className="choice-list">
+            {storageOptions.map((option) => {
+              const selected = storageType === option.value;
+              return (
+                <label key={option.value} className="choice-row">
+                  <input
+                    type="radio"
+                    name="storage-type"
+                    value={option.value}
+                    checked={selected}
+                    onChange={(e) => setStorageType(e.target.value as StorageTypeValue)}
+                    className="sr-only"
+                  />
+                  <span className={`choice-indicator ${selected ? 'choice-indicator-selected' : ''}`} aria-hidden="true">
+                    {selected && <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+                  </span>
+                  <span className="min-w-0 text-xs font-medium text-foreground">
+                    {option.label} <span className="font-normal text-muted-foreground">· {option.description}</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
-        </div>
+        </fieldset>
 
-        {/* Action Buttons */}
         <div className="flex gap-2">
           <button
             id="save-btn"
@@ -287,103 +287,72 @@ export function PopupApp() {
           >
             {getSaveButtonText()}
           </button>
-          <button
-            id="clear-btn"
-            onClick={handleClear}
-            className="rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
+          <button id="clear-btn" onClick={handleClear} className="secondary-button">
             Clear
           </button>
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="border-t border-border px-3 py-2">
-        <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Keyboard className="h-3 w-3" />
-          <span>Shortcut:</span>
-          {shortcut === null ? (
-            <span className="text-xs text-muted-foreground">Loading...</span>
-          ) : shortcut === '' ? (
-            <span className="text-xs text-muted-foreground">Not set</span>
-          ) : (
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-              {shortcut}
-            </kbd>
-          )}
-          <button onClick={handleOpenOptions} className="cursor-pointer text-primary hover:underline text-xs" id="open-options">
-            (Options)
-          </button>
-        </div>
-        <div className="space-y-0.5 text-xs">
-          <div className="text-muted-foreground">
-            URL: <span id="current-url" className="text-foreground">{tab ? getDomain(tab.url || '') || tab.url : ''}</span>
-          </div>
-          <div id="current-title-display" className="text-muted-foreground">
-            Title: <span id="current-title" className="text-foreground">{tab?.title || ''}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Existing Rules Section (if any) */}
-      {existingRules.length > 0 && (
-        <div id="existing-rules-container" className="border-t border-border px-4 py-3">
-          <h3 className="text-sm font-semibold text-foreground mb-2">Saved Rules for This Page</h3>
-          <div id="existing-rules-list" className="space-y-2">
-            {existingRules.map((rule, index) => {
-              const isActive = index === 0;
-              return (
-                <div
-                  key={`${rule.type}-${rule.key}`}
-                  className={`p-2 rounded-md border ${
-                    isActive
-                      ? 'bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-800'
-                      : 'bg-muted/50 border-border'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`text-xs font-semibold ${
-                            isActive ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'
-                          }`}
+        {existingRules.length > 0 && (
+          <section id="existing-rules-container" className="border-t border-border pt-3">
+            <h2 className="field-label">Saved rules for this page</h2>
+            <div id="existing-rules-list" className="space-y-2">
+              {existingRules.map((rule, index) => {
+                const isActive = index === 0;
+                return (
+                  <div key={`${rule.type}-${rule.key}`} className={`rule-card ${isActive ? 'rule-card-active' : ''}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="truncate text-[11px] font-semibold text-muted-foreground">{rule.label}</span>
+                          {isActive && <span className="success-badge">Active</span>}
+                        </div>
+                        <code className="block truncate text-xs text-primary">{rule.title}</code>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          onClick={() => handleEditRule(rule)}
+                          className="edit-rule-btn rounded-lg bg-accent px-2 py-1 text-[11px] font-semibold text-accent-foreground hover:brightness-95"
                         >
-                          {rule.label}
-                        </span>
-                        {isActive && (
-                          <span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded-full font-medium">
-                            ACTIVE
-                          </span>
-                        )}
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRule(rule)}
+                          className="delete-rule-btn destructive-text rounded-lg border border-border bg-card px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+                        >
+                          Delete
+                        </button>
                       </div>
-                      <div className="text-xs text-foreground">
-                        <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs font-mono text-primary">
-                          {rule.title}
-                        </code>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleEditRule(rule)}
-                        className="edit-rule-btn text-xs px-2 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRule(rule)}
-                        className="delete-rule-btn text-xs px-2 py-1 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90"
-                      >
-                        Delete
-                      </button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <footer className="popup-footer">
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <Keyboard className="h-3 w-3" aria-hidden="true" />
+          <span>Shortcut</span>
+          {shortcut === null ? (
+            <span>Loading...</span>
+          ) : shortcut === '' ? (
+            <span>Not set</span>
+          ) : (
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground">{shortcut}</kbd>
+          )}
+          <button onClick={handleOpenOptions} className="ml-auto font-semibold text-primary hover:underline" id="open-options">
+            Options
+          </button>
         </div>
-      )}
+        <div className="truncate">
+          URL: <span id="current-url" className="text-foreground">{tab ? getDomain(tab.url || '') || tab.url : ''}</span>
+        </div>
+        <div id="current-title-display" className="truncate">
+          Title: <span id="current-title" className="text-foreground">{tab?.title || ''}</span>
+        </div>
+      </footer>
     </div>
   );
 }
