@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createMessage } from '@shared/messages';
 import type { GetSavedTitlesResponse } from '@shared/messages';
 import type { Settings as SettingsType } from '@shared/types';
@@ -8,6 +8,12 @@ interface SavedTitle {
   key: string;
   title: string;
   displayKey: string;
+}
+
+type EditState = 'idle' | 'saving' | 'error';
+
+function getRuleId(rule: SavedTitle): string {
+  return `${rule.type}:${rule.key}`;
 }
 
 export function OptionsApp() {
@@ -27,6 +33,12 @@ export function OptionsApp() {
   });
   const [loading, setLoading] = useState(true);
   const [shortcut, setShortcut] = useState<string | null>(null);
+  const [editingRule, setEditingRule] = useState<SavedTitle | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [editState, setEditState] = useState<EditState>('idle');
+  const [editError, setEditError] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const editButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 
   // Load settings and saved titles
   useEffect(() => {
@@ -34,6 +46,15 @@ export function OptionsApp() {
     loadSavedTitles();
     loadShortcut();
   }, []);
+
+  useEffect(() => {
+    if (!editingRule) return;
+
+    window.requestAnimationFrame(() => {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    });
+  }, [editingRule]);
 
   const loadShortcut = () => {
     chrome.commands.getAll((commands) => {
@@ -112,6 +133,78 @@ export function OptionsApp() {
     }
   };
 
+  const focusEditButton = (ruleId: string) => {
+    window.requestAnimationFrame(() => {
+      editButtonRefs.current.get(ruleId)?.focus();
+    });
+  };
+
+  const handleEditTitle = (rule: SavedTitle) => {
+    if (editState === 'saving') return;
+
+    setEditingRule(rule);
+    setEditValue(rule.title);
+    setEditState('idle');
+    setEditError('');
+  };
+
+  const handleCancelEdit = () => {
+    if (!editingRule) return;
+
+    const ruleId = getRuleId(editingRule);
+    setEditingRule(null);
+    setEditValue('');
+    setEditState('idle');
+    setEditError('');
+    focusEditButton(ruleId);
+  };
+
+  const handleUpdateTitle = async () => {
+    if (!editingRule || editState === 'saving') return;
+
+    const ruleId = getRuleId(editingRule);
+    setEditState('saving');
+    setEditError('');
+
+    try {
+      const response = await chrome.runtime.sendMessage(
+        createMessage('UPDATE_SAVED_TITLE', {
+          type: editingRule.type,
+          key: editingRule.key,
+          title: editValue,
+        })
+      ) as { success?: boolean; error?: string };
+
+      if (!response?.success) {
+        setEditState('error');
+        setEditError(response?.error || 'Failed to update title');
+        return;
+      }
+
+      const collection = editingRule.type === 'tab'
+        ? 'tabTitles'
+        : editingRule.type === 'url'
+          ? 'urlTitles'
+          : 'domainTitles';
+
+      setSavedTitles((current) => ({
+        ...current,
+        [collection]: current[collection].map((item) =>
+          item.key === editingRule.key ? { ...item, title: editValue } : item
+        ),
+      }));
+      setEditingRule(null);
+      setEditValue('');
+      setEditState('idle');
+      setEditError('');
+      focusEditButton(ruleId);
+    } catch (error) {
+      console.error('Error updating title:', error);
+      setEditState('error');
+      setEditError('Failed to update title');
+    }
+  };
+
   const handleCustomizeShortcut = () => {
     chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
   };
@@ -123,23 +216,107 @@ export function OptionsApp() {
       <div className="mb-6 last:mb-0">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground">{title}</h3>
         <div className="space-y-2">
-          {titles.map((item) => (
-            <div
-              key={`${item.type}-${item.key}`}
-              className="flex items-center justify-between rounded-xl border border-border bg-muted p-3"
-            >
-              <div className="flex-1 min-w-0 mr-4">
-                <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                <p className="text-xs text-muted-foreground truncate">{item.displayKey}</p>
-              </div>
-              <button
-                onClick={() => handleDeleteTitle(item.type, item.key)}
-                className="destructive-text rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-background"
+          {titles.map((item, index) => {
+            const ruleId = getRuleId(item);
+            const isEditing = editingRule ? getRuleId(editingRule) === ruleId : false;
+            const inputId = `edit-${item.type}-title-${index}`;
+            const errorId = `${inputId}-error`;
+
+            return (
+              <div
+                key={ruleId}
+                className="saved-title-item flex items-start justify-between rounded-xl border border-border bg-muted p-3"
               >
-                Delete
-              </button>
-            </div>
-          ))}
+                {isEditing ? (
+                  <div className="mr-4 min-w-0 flex-1">
+                    <label htmlFor={inputId} className="sr-only">
+                      Edit title for {item.displayKey}
+                    </label>
+                    <input
+                      ref={editInputRef}
+                      id={inputId}
+                      type="text"
+                      value={editValue}
+                      onChange={(event) => {
+                        setEditValue(event.target.value);
+                        if (editState === 'error') {
+                          setEditState('idle');
+                          setEditError('');
+                        }
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          handleUpdateTitle();
+                        } else if (event.key === 'Escape') {
+                          event.preventDefault();
+                          handleCancelEdit();
+                        }
+                      }}
+                      aria-invalid={editState === 'error'}
+                      aria-describedby={editError ? errorId : undefined}
+                      className="edit-title-input title-input"
+                    />
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{item.displayKey}</p>
+                    {editError && (
+                      <p id={errorId} role="alert" className="edit-title-error mt-1 text-xs destructive-text">
+                        {editError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mr-4 min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{item.displayKey}</p>
+                  </div>
+                )}
+                <div className="flex shrink-0 gap-2">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={handleUpdateTitle}
+                        disabled={editState === 'saving'}
+                        className="save-title-btn primary-button px-3 py-1.5 text-xs"
+                      >
+                        {editState === 'saving' ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={editState === 'saving'}
+                        className="cancel-title-btn secondary-button px-3 py-1.5 text-xs disabled:cursor-default disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        ref={(button) => {
+                          if (button) {
+                            editButtonRefs.current.set(ruleId, button);
+                          } else {
+                            editButtonRefs.current.delete(ruleId);
+                          }
+                        }}
+                        onClick={() => handleEditTitle(item)}
+                        disabled={editState === 'saving'}
+                        className="edit-title-btn rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-background disabled:cursor-default disabled:opacity-60"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTitle(item.type, item.key)}
+                        disabled={editState === 'saving'}
+                        className="delete-title-btn destructive-text rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-background disabled:cursor-default disabled:opacity-60"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -163,7 +340,7 @@ export function OptionsApp() {
         </header>
 
         {/* Saved Titles Section */}
-        <section className="settings-card mb-6">
+        <section id="saved-titles" className="settings-card mb-6">
           <h2 className="mb-2 text-lg font-semibold text-foreground">Saved titles</h2>
           <p className="mb-6 text-sm text-muted-foreground">
             {totalTitles > 0
@@ -222,6 +399,7 @@ export function OptionsApp() {
           <div className="space-y-1">
             <label className="settings-row cursor-pointer">
               <input
+                id="enable-bookmark-titles"
                 type="checkbox"
                 checked={settings.enableBookmarkTitles}
                 onChange={(e) => handleSettingChange('enableBookmarkTitles', e.target.checked)}
@@ -238,6 +416,7 @@ export function OptionsApp() {
             </label>
             <label className="settings-row cursor-pointer">
               <input
+                id="enable-context-menu"
                 type="checkbox"
                 checked={settings.enableContextMenu}
                 onChange={(e) => handleSettingChange('enableContextMenu', e.target.checked)}
@@ -254,6 +433,7 @@ export function OptionsApp() {
             </label>
             <label className="settings-row cursor-pointer">
               <input
+                id="debug-mode"
                 type="checkbox"
                 checked={settings.debugMode}
                 onChange={(e) => handleSettingChange('debugMode', e.target.checked)}

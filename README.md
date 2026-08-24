@@ -38,7 +38,7 @@ A modern Chrome extension inspired by [Tab ReTitle](https://addons.mozilla.org/e
 
 - **Additional Features:**
   - Live preview of title changes as you type
-  - Manage existing rules directly from popup
+  - Edit and delete existing rules from the popup or Settings page
   - Bookmark title integration (optional)
   - Context menu integration
   - Customizable keyboard shortcut (default: Ctrl+Shift+E)

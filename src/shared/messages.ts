@@ -5,6 +5,7 @@ export type MessageType =
   | 'UPDATE_TITLE'
   | 'GET_CURRENT_TITLE'
   | 'SAVE_TITLE'
+  | 'UPDATE_SAVED_TITLE'
   | 'DELETE_TITLE'
   | 'GET_SAVED_TITLES'
   | 'GET_QUOTA_INFO'
@@ -33,6 +34,12 @@ export interface SaveTitlePayload {
 export interface DeleteTitlePayload {
   type: 'tab' | 'url' | 'domain' | 'regex';
   key: string;
+}
+
+export interface UpdateSavedTitlePayload {
+  type: 'tab' | 'url' | 'domain';
+  key: string;
+  title: string;
 }
 
 export interface GetSavedTitlesResponse {

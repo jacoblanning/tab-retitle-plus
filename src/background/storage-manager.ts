@@ -205,6 +205,44 @@ export class StorageManager {
   }
 
   /**
+   * Update an existing saved title without changing its matching key or metadata
+   */
+  async updateSavedTitle(type: 'tab' | 'url' | 'domain', key: string, title: string): Promise<void> {
+    const data = await this.getData();
+    const timestamp = Date.now();
+
+    switch (type) {
+      case 'tab': {
+        const existingTitle = data.tabTitles[key];
+        if (!existingTitle) {
+          throw new Error('Saved title rule not found');
+        }
+        data.tabTitles[key] = { ...existingTitle, title, timestamp };
+        break;
+      }
+      case 'url': {
+        const existingTitle = data.urlTitles[key];
+        if (!existingTitle) {
+          throw new Error('Saved title rule not found');
+        }
+        data.urlTitles[key] = { ...existingTitle, title, timestamp };
+        break;
+      }
+      case 'domain': {
+        const existingTitle = data.domainTitles[key];
+        if (!existingTitle) {
+          throw new Error('Saved title rule not found');
+        }
+        data.domainTitles[key] = { ...existingTitle, title, timestamp };
+        break;
+      }
+    }
+
+    await this.setData(data);
+    debugLog('Updated saved title:', { type, key });
+  }
+
+  /**
    * Delete a title by type and key
    */
   async deleteTitle(type: 'tab' | 'url' | 'domain' | 'regex', key: string): Promise<void> {

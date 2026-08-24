@@ -1,5 +1,5 @@
 import { StorageManager } from './storage-manager';
-import type { Message, SaveTitlePayload, DeleteTitlePayload } from '@shared/messages';
+import type { Message, SaveTitlePayload, UpdateSavedTitlePayload, DeleteTitlePayload } from '@shared/messages';
 import {
   CONTEXT_MENU_ID,
   TITLE_FIGHT_MAX_REASSERTS,
@@ -463,6 +463,21 @@ async function handleMessage(message: Message, _sender: chrome.runtime.MessageSe
     case 'DELETE_TITLE': {
       const payload = message.payload as DeleteTitlePayload;
       await storage.deleteTitle(payload.type, payload.key);
+      return { success: true };
+    }
+
+    case 'UPDATE_SAVED_TITLE': {
+      const payload = message.payload as UpdateSavedTitlePayload;
+      const titleValidation = validateTitleLength(payload.title);
+
+      if (!titleValidation.isValid) {
+        return {
+          success: false,
+          error: titleValidation.error,
+        };
+      }
+
+      await storage.updateSavedTitle(payload.type, payload.key, payload.title);
       return { success: true };
     }
 

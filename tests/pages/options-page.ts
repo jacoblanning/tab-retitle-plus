@@ -9,6 +9,11 @@ import { BasePage } from './base-page';
 export class OptionsPage extends BasePage {
   // Locators
   readonly savedTitlesContainer = () => this.page.locator('#saved-titles');
+  readonly savedTitleItems = () => this.savedTitlesContainer().locator('.saved-title-item');
+  readonly editTitleInput = () => this.savedTitlesContainer().locator('.edit-title-input');
+  readonly saveTitleButton = () => this.savedTitlesContainer().locator('.save-title-btn');
+  readonly cancelTitleButton = () => this.savedTitlesContainer().locator('.cancel-title-btn');
+  readonly editTitleError = () => this.savedTitlesContainer().locator('.edit-title-error');
   readonly customizeShortcutButton = () => this.page.locator('#customize-shortcut-btn');
   readonly enableBookmarkTitles = () => this.page.locator('#enable-bookmark-titles');
   readonly enableContextMenu = () => this.page.locator('#enable-context-menu');
@@ -32,7 +37,7 @@ export class OptionsPage extends BasePage {
    * Get count of saved titles
    */
   async getSavedTitlesCount(): Promise<number> {
-    const titles = await this.savedTitlesContainer().locator('.saved-title-item').count();
+    const titles = await this.savedTitleItems().count();
     return titles;
   }
 
@@ -58,6 +63,13 @@ export class OptionsPage extends BasePage {
     if (editButtons[index]) {
       await editButtons[index].click();
     }
+  }
+
+  /**
+   * Replace the value in the currently active title editor
+   */
+  async fillEditedTitle(title: string): Promise<void> {
+    await this.editTitleInput().fill(title);
   }
 
   /**
