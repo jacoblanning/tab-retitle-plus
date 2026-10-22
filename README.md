@@ -399,3 +399,7 @@ Built with:
 - [Lucide React](https://lucide.dev/) - Icons
 - [Playwright](https://playwright.dev/) - E2E testing
 - [Chrome Extensions API](https://developer.chrome.com/docs/extensions/)
+
+### Default rename mode
+
+Select a mode in the popup and click **Make selected option the default**. Future popups preselect that mode. Choosing another mode or editing a saved rule affects only the current popup unless you explicitly save a new default. The preference uses Chrome Sync settings; existing installations continue to default to One-time.

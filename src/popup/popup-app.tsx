@@ -4,7 +4,7 @@ import { useCurrentTab } from '../hooks/useCurrentTab';
 import { useMessages } from '../hooks/useMessages';
 import { createMessage } from '@shared/messages';
 import type { SaveTitlePayload } from '@shared/messages';
-import type { StorageType } from '@shared/types';
+import type { Settings as ExtensionSettings, StorageType } from '@shared/types';
 import { getDomain, processTitleTemplate } from '@shared/utils';
 
 type StorageTypeValue = 'once' | 'tab' | 'url' | 'domain';
@@ -26,6 +26,9 @@ export function PopupApp() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [saveMessage, setSaveMessage] = useState('');
   const [existingRules, setExistingRules] = useState<ExistingRule[]>([]);
+  const [defaultType, setDefaultType] = useState<StorageTypeValue>('once');
+  const [defaultLoading, setDefaultLoading] = useState(true);
+  const [defaultMessage, setDefaultMessage] = useState('');
   const [shortcut, setShortcut] = useState<string | null>(null);
 
   const storageOptions: { value: StorageTypeValue; label: string; description: string }[] = [
@@ -34,6 +37,34 @@ export function PopupApp() {
     { value: 'url', label: 'Exact URL', description: 'matches full URL' },
     { value: 'domain', label: 'Domain-wide', description: 'applies to entire domain' },
   ];
+
+  // Older installations retain the original one-time default.
+  useEffect(() => {
+    chrome.storage.sync.get('settings').then(({ settings }) => {
+      const value = (settings as ExtensionSettings | undefined)?.defaultStorageType;
+      if (!value) return;
+      if (['once', 'tab', 'url', 'domain'].includes(value)) {
+        setStorageType(value);
+        setDefaultType(value);
+      }
+    }).catch(error => {
+      console.error('Error loading default rename mode:', error);
+    }).finally(() => setDefaultLoading(false));
+  }, []);
+
+  const saveDefault = async () => {
+    try {
+      const { settings = {} } = await chrome.storage.sync.get('settings');
+      await chrome.storage.sync.set({
+        settings: { ...(settings as Partial<ExtensionSettings>), defaultStorageType: storageType },
+      });
+      setDefaultType(storageType);
+      setDefaultMessage('Default saved');
+    } catch (error) {
+      console.error('Error saving default rename mode:', error);
+      setDefaultMessage('Could not save default. Please try again.');
+    }
+  };
 
   // Load current title and existing rules
   useEffect(() => {
@@ -191,7 +222,7 @@ export function PopupApp() {
     return 'Save Title';
   };
 
-  if (tabLoading) {
+  if (tabLoading || defaultLoading) {
     return (
       <div className="popup-shell">
         <div className="product-header">
@@ -276,6 +307,21 @@ export function PopupApp() {
               );
             })}
           </div>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={saveDefault}
+              disabled={storageType === defaultType}
+              className="text-xs font-semibold text-primary disabled:opacity-50"
+            >
+              {storageType === defaultType
+                ? 'Selected option is the default'
+                : 'Make selected option the default'}
+            </button>
+          </div>
+          <p role="status" className="mt-1 text-xs text-muted-foreground">
+            {defaultMessage}
+          </p>
         </fieldset>
 
         <div className="flex gap-2">

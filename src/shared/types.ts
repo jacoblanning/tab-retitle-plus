@@ -27,6 +27,7 @@ export interface RegexPattern {
 }
 
 export interface Settings {
+  defaultStorageType?: StorageType;
   enableBookmarkTitles: boolean;
   enableContextMenu: boolean;
   debugMode: boolean;
